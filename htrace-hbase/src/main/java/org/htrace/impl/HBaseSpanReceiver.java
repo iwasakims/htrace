@@ -326,11 +326,13 @@ public class HBaseSpanReceiver implements SpanReceiver {
     org.htrace.TraceScope parent = 
         org.htrace.Trace.startSpan("HBaseSpanReceiver.main.parent",
                                    org.htrace.Sampler.ALWAYS);
+    long traceid = parent.getSpan().getTraceId();
     org.htrace.TraceScope child =
         org.htrace.Trace.startSpan("HBaseSpanReceiver.main.child",
                                    parent.getSpan());
     child.close();
     parent.close();
     receiver.close();
+    System.out.println("trace id: " + traceid);
   }
 }

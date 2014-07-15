@@ -34,6 +34,7 @@ language governing permissions and limitations under the License. -->
     <hbase.version>0.99.0-SNAPSHOT</hbase.version>
     <hadoop.version>2.4.0</hadoop.version>
     <protobuf.version>2.5.0</protobuf.version>
+    <protobuf.java.format.version>1.2</protobuf.java.format.version>
   </properties>
 
   <build>
@@ -86,6 +87,11 @@ language governing permissions and limitations under the License. -->
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.googlecode.protobuf-java-format</groupId>
+      <artifactId>protobuf-java-format</artifactId>
+      <version>${protobuf.java.format.version}</version>
+    </dependency>
     <!-- Global deps. -->
     <dependency>
       <groupId>commons-logging</groupId>
@@ -107,6 +113,7 @@ language governing permissions and limitations under the License. -->
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-client</artifactId>
       <version>${hbase.version}</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>org.htrace</groupId>
@@ -124,6 +131,7 @@ language governing permissions and limitations under the License. -->
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
       <version>${protobuf.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
