@@ -38,6 +38,14 @@ language governing permissions and limitations under the License. -->
   </properties>
 
   <build>
+    <resources>
+      <resource>
+        <directory>${basedir}/src/main/resources</directory>
+        <includes>
+          <include>webapps/**</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -56,6 +64,12 @@ language governing permissions and limitations under the License. -->
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/generated/**</exclude>
+            <exclude>**/webapps/static/d3.min.js</exclude>
+          </excludes>
+        </configuration>
       </plugin>
       <plugin>
         <!-- explicitly define maven-deploy-plugin after other to force exec order -->
@@ -68,6 +82,20 @@ language governing permissions and limitations under the License. -->
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.sling</groupId>
+        <artifactId>maven-jspc-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>compile-jsp</id>
+            <goals>
+              <goal>jspc</goal>
+            </goals>
+            <configuration>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
@@ -91,6 +119,12 @@ language governing permissions and limitations under the License. -->
       <groupId>com.googlecode.protobuf-java-format</groupId>
       <artifactId>protobuf-java-format</artifactId>
       <version>${protobuf.java.format.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protobuf.version}</version>
+      <scope>provided</scope>
     </dependency>
     <!-- Global deps. -->
     <dependency>
@@ -126,12 +160,6 @@ language governing permissions and limitations under the License. -->
       <artifactId>hbase-testing-util</artifactId>
       <version>${hbase.version}</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>${protobuf.version}</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
 
