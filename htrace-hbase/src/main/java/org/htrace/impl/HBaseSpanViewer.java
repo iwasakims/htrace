@@ -56,7 +56,7 @@ public class HBaseSpanViewer {
                                      HBaseSpanReceiver.DEFAULT_COLUMNFAMILY));
   }
 
-  private void startClient() {
+  public void startClient() {
     if (this.htable == null) {
       try {
         this.hconnection = HConnectionManager.createConnection(conf);
@@ -67,7 +67,7 @@ public class HBaseSpanViewer {
     }
   }
 
-  private void stopClient() {
+  public void stopClient() {
     try {
       if (this.htable != null) {
         this.htable.close();
@@ -92,6 +92,7 @@ public class HBaseSpanViewer {
                                                 cell.getQualifierLength());
       spans.add(SpanProtos.Span.parseFrom(in));
     }
+    stopClient();
     return spans;
   }
 
