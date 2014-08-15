@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.htrace.impl;
+package org.htrace.viewer;
 
 import com.googlecode.protobuf.format.JsonFormat;
 import java.io.IOException;
@@ -29,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.http.HttpServer2;
 import org.apache.hadoop.util.ServletUtil;
 import org.htrace.protobuf.generated.SpanProtos;
 
@@ -41,7 +42,7 @@ public class HBaseSpanViewerServlet extends HttpServlet {
   public void doGet(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
     final Configuration conf = (Configuration) getServletContext()
-        .getAttribute(HBaseSpanViewerServer.CURRENT_CONF);
+        .getAttribute(HttpServer2.CONF_CONTEXT_ATTRIBUTE);
 
     final String path =
         validatePath(ServletUtil.getDecodedPath(request, PREFIX));

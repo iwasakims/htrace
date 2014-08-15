@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.htrace.impl;
+package org.htrace.viewer;
 
 import com.googlecode.protobuf.format.JsonFormat;
 import java.io.InputStream;
@@ -37,8 +37,8 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.htrace.impl.HBaseSpanReceiver;
 import org.htrace.protobuf.generated.SpanProtos;
-
 
 public class HBaseSpanViewer {
   private static final Log LOG = LogFactory.getLog(HBaseSpanViewer.class);

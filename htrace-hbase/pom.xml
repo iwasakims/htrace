@@ -84,15 +84,60 @@ language governing permissions and limitations under the License. -->
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.sling</groupId>
-        <artifactId>maven-jspc-plugin</artifactId>
+        <artifactId>maven-antrun-plugin</artifactId>
         <executions>
+          <!-- Generate web app sources -->
           <execution>
-            <id>compile-jsp</id>
+            <id>generate</id>
+            <phase>generate-sources</phase>
+            <configuration>
+              <target>
+                <property name="build.webapps"
+                          location="${project.build.directory}/webapps"/>
+                <property name="src.webapps"
+                          location="${basedir}/src/main/resources/webapps"/>
+                <property name="generated.sources"
+                          location="${project.build.directory}/generated-sources"/>
+                <mkdir dir="${build.webapps}"/>
+                <copy todir="${build.webapps}">
+                  <fileset dir="${src.webapps}">
+                    <exclude name="**/*.jsp"/>
+                    <exclude name="**/.*"/>
+                    <exclude name="**/*~"/>
+                  </fileset>
+                </copy>
+                <!--The compile.classpath is passed in by maven -->
+                <taskdef classname="org.apache.jasper.JspC"
+                         name="jspcompiler"
+                         classpathref="maven.compile.classpath"/>
+                <mkdir dir="${build.webapps}/htrace/WEB-INF"/>
+                <jspcompiler uriroot="${src.webapps}/htrace"
+                             outputdir="${generated.sources}/java"
+                             package="org.htrace.viewer.generated"
+                             webxml="${build.webapps}/htrace/WEB-INF/web.xml"/>
+              </target>
+            </configuration>
             <goals>
-              <goal>jspc</goal>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <!-- Add the generated sources -->
+          <execution>
+            <id>jspcSource-packageInfo-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
             </goals>
             <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/java</source>
+              </sources>
             </configuration>
           </execution>
         </executions>

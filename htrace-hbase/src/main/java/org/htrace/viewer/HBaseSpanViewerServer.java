@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.htrace.impl;
+package org.htrace.viewer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,15 +27,15 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.http.HttpServer2;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.hbase.HBaseConfiguration;
 
 public class HBaseSpanViewerServer {
   private static final Log LOG = LogFactory.getLog(HBaseSpanViewerServer.class);
-  public static final String CURRENT_CONF = "current.conf";
   public static final String HTRACE_VIEWER_HTTP_ADDRESS_KEY = "htrace.viewer.http.address";
   public static final String HTRACE_VIEWER_HTTP_ADDRESS_DEFAULT = "0.0.0.0:16900";
   private Configuration conf;
   private HttpServer2 httpServer;
-    InetSocketAddress httpAddress;
+  private InetSocketAddress httpAddress;
 
   public HBaseSpanViewerServer(Configuration conf) {
     this.conf = conf;
@@ -55,7 +55,6 @@ public class HBaseSpanViewerServer {
     builder.addEndpoint(uri);
     LOG.info("Starting Web-server for " + name + " at: " + uri);
     httpServer = builder.build();
-    httpServer.setAttribute(CURRENT_CONF, conf);
     httpServer.addServlet("getspans",
                           HBaseSpanViewerServlet.PREFIX + "/*",
                           HBaseSpanViewerServlet.class);
@@ -85,7 +84,8 @@ public class HBaseSpanViewerServer {
    * @throws IOException
    */
   public static void main(String[] args) throws Exception {
-    HBaseSpanViewerServer server = new HBaseSpanViewerServer(new Configuration());
+    HBaseSpanViewerServer server =
+        new HBaseSpanViewerServer(HBaseConfiguration.create());
     server.start();
     server.join();
     server.stop();
