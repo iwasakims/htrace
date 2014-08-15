@@ -33,8 +33,8 @@ import org.apache.hadoop.http.HttpServer2;
 import org.apache.hadoop.util.ServletUtil;
 import org.htrace.protobuf.generated.SpanProtos;
 
-public class HBaseSpanViewerServlet extends HttpServlet {
-  private static final Log LOG = LogFactory.getLog(HBaseSpanViewerServlet.class);
+public class HBaseSpanViewerSpansServlet extends HttpServlet {
+  private static final Log LOG = LogFactory.getLog(HBaseSpanViewerSpansServlet.class);
   public static final String PREFIX = "/getspans";
 
   @Override

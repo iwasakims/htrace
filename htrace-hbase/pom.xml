@@ -35,32 +35,20 @@ language governing permissions and limitations under the License. -->
     <hadoop.version>2.4.0</hadoop.version>
     <protobuf.version>2.5.0</protobuf.version>
     <protobuf.java.format.version>1.2</protobuf.java.format.version>
+    <maven.antrun.version>1.6</maven.antrun.version>
+    <jasper.version>5.5.23</jasper.version>
   </properties>
 
   <build>
     <resources>
       <resource>
-        <directory>${basedir}/src/main/resources</directory>
+        <directory>${project.build.directory}</directory>
         <includes>
           <include>webapps/**</include>
         </includes>
       </resource>
     </resources>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-javadoc-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-gpg-plugin</artifactId>
-      </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
@@ -72,8 +60,8 @@ language governing permissions and limitations under the License. -->
         </configuration>
       </plugin>
       <plugin>
-        <!-- explicitly define maven-deploy-plugin after other to force exec order -->
-        <artifactId>maven-deploy-plugin</artifactId>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
@@ -85,17 +73,17 @@ language governing permissions and limitations under the License. -->
       </plugin>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven.antrun.version}</version>
         <executions>
-          <!-- Generate web app sources -->
           <execution>
-            <id>generate</id>
+            <id>generate-jsp</id>
             <phase>generate-sources</phase>
             <configuration>
               <target>
                 <property name="build.webapps"
                           location="${project.build.directory}/webapps"/>
                 <property name="src.webapps"
-                          location="${basedir}/src/main/resources/webapps"/>
+                          location="${basedir}/src/main/webapps"/>
                 <property name="generated.sources"
                           location="${project.build.directory}/generated-sources"/>
                 <mkdir dir="${build.webapps}"/>
@@ -106,7 +94,6 @@ language governing permissions and limitations under the License. -->
                     <exclude name="**/*~"/>
                   </fileset>
                 </copy>
-                <!--The compile.classpath is passed in by maven -->
                 <taskdef classname="org.apache.jasper.JspC"
                          name="jspcompiler"
                          classpathref="maven.compile.classpath"/>
@@ -127,7 +114,6 @@ language governing permissions and limitations under the License. -->
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
         <executions>
-          <!-- Add the generated sources -->
           <execution>
             <id>jspcSource-packageInfo-source</id>
             <phase>generate-sources</phase>
@@ -141,6 +127,20 @@ language governing permissions and limitations under the License. -->
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <!-- explicitly define maven-deploy-plugin after other to force exec order -->
+        <artifactId>maven-deploy-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
@@ -170,6 +170,17 @@ language governing permissions and limitations under the License. -->
       <artifactId>protobuf-java</artifactId>
       <version>${protobuf.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>tomcat</groupId>
+      <artifactId>jasper-compiler</artifactId>
+      <version>${jasper.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>tomcat</groupId>
+      <artifactId>jasper-runtime</artifactId>
+      <version>${jasper.version}</version>
     </dependency>
     <!-- Global deps. -->
     <dependency>

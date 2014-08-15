@@ -55,9 +55,12 @@ public class HBaseSpanViewerServer {
     builder.addEndpoint(uri);
     LOG.info("Starting Web-server for " + name + " at: " + uri);
     httpServer = builder.build();
+    httpServer.addServlet("gettraces",
+                          HBaseSpanViewerTracesServlet.PREFIX + "/*",
+                          HBaseSpanViewerTracesServlet.class);
     httpServer.addServlet("getspans",
-                          HBaseSpanViewerServlet.PREFIX + "/*",
-                          HBaseSpanViewerServlet.class);
+                          HBaseSpanViewerSpansServlet.PREFIX + "/*",
+                          HBaseSpanViewerSpansServlet.class);
     httpServer.start();
 
     int connIdx = 0;
