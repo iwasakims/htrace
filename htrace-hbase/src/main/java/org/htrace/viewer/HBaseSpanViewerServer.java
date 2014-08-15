@@ -27,9 +27,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.http.HttpServer2;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 
-public class HBaseSpanViewerServer {
+public class HBaseSpanViewerServer implements Tool {
   private static final Log LOG = LogFactory.getLog(HBaseSpanViewerServer.class);
   public static final String HTRACE_VIEWER_HTTP_ADDRESS_KEY = "htrace.viewer.http.address";
   public static final String HTRACE_VIEWER_HTTP_ADDRESS_DEFAULT = "0.0.0.0:16900";
@@ -37,8 +39,12 @@ public class HBaseSpanViewerServer {
   private HttpServer2 httpServer;
   private InetSocketAddress httpAddress;
 
-  public HBaseSpanViewerServer(Configuration conf) {
+  public void setConf(Configuration conf) {
     this.conf = conf;
+  }
+
+  public Configuration getConf() {
+    return this.conf;
   }
 
   void start() throws IOException {
@@ -55,14 +61,15 @@ public class HBaseSpanViewerServer {
     builder.addEndpoint(uri);
     LOG.info("Starting Web-server for " + name + " at: " + uri);
     httpServer = builder.build();
+    httpServer.setAttribute("htrace", this);
     httpServer.addServlet("gettraces",
                           HBaseSpanViewerTracesServlet.PREFIX + "/*",
                           HBaseSpanViewerTracesServlet.class);
     httpServer.addServlet("getspans",
                           HBaseSpanViewerSpansServlet.PREFIX + "/*",
                           HBaseSpanViewerSpansServlet.class);
+    httpServer.addServlet("hello", "/hello", HBaseSpanViewerServlet.class);
     httpServer.start();
-
     int connIdx = 0;
     httpAddress = httpServer.getConnectorAddress(connIdx++);
   }
@@ -83,14 +90,17 @@ public class HBaseSpanViewerServer {
     return httpAddress;
   }
 
+  public int run(String[] args) throws Exception {
+    start();
+    join();
+    stop();
+    return 0;
+  }
+
   /**
    * @throws IOException
    */
   public static void main(String[] args) throws Exception {
-    HBaseSpanViewerServer server =
-        new HBaseSpanViewerServer(HBaseConfiguration.create());
-    server.start();
-    server.join();
-    server.stop();
+    ToolRunner.run(HBaseConfiguration.create(), new HBaseSpanViewerServer(), args);
   }
 }

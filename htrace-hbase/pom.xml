@@ -32,20 +32,21 @@ language governing permissions and limitations under the License. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- <hbase.version>0.98.1-hadoop2</hbase.version> -->
     <hbase.version>0.99.0-SNAPSHOT</hbase.version>
-    <hadoop.version>2.4.0</hadoop.version>
+    <hadoop.version>2.4.1</hadoop.version>
     <protobuf.version>2.5.0</protobuf.version>
     <protobuf.java.format.version>1.2</protobuf.java.format.version>
-    <maven.antrun.version>1.6</maven.antrun.version>
-    <jasper.version>5.5.23</jasper.version>
   </properties>
 
   <build>
     <resources>
       <resource>
-        <directory>${project.build.directory}</directory>
+        <directory>${basedir}/src/main</directory>
         <includes>
           <include>webapps/**</include>
         </includes>
+        <excludes>
+          <exclude>**/*.jsp</exclude>
+        </excludes>
       </resource>
     </resources>
     <plugins>
@@ -72,67 +73,10 @@ language governing permissions and limitations under the License. -->
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>${maven.antrun.version}</version>
-        <executions>
-          <execution>
-            <id>generate-jsp</id>
-            <phase>generate-sources</phase>
-            <configuration>
-              <target>
-                <property name="build.webapps"
-                          location="${project.build.directory}/webapps"/>
-                <property name="src.webapps"
-                          location="${basedir}/src/main/webapps"/>
-                <property name="generated.sources"
-                          location="${project.build.directory}/generated-sources"/>
-                <mkdir dir="${build.webapps}"/>
-                <copy todir="${build.webapps}">
-                  <fileset dir="${src.webapps}">
-                    <exclude name="**/*.jsp"/>
-                    <exclude name="**/.*"/>
-                    <exclude name="**/*~"/>
-                  </fileset>
-                </copy>
-                <taskdef classname="org.apache.jasper.JspC"
-                         name="jspcompiler"
-                         classpathref="maven.compile.classpath"/>
-                <mkdir dir="${build.webapps}/htrace/WEB-INF"/>
-                <jspcompiler uriroot="${src.webapps}/htrace"
-                             outputdir="${generated.sources}/java"
-                             package="org.htrace.viewer.generated"
-                             webxml="${build.webapps}/htrace/WEB-INF/web.xml"/>
-              </target>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>jspcSource-packageInfo-source</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${project.build.directory}/generated-sources/java</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
+        <artifactId>maven-compiler-plugin</artifactId>
       </plugin>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -170,17 +114,6 @@ language governing permissions and limitations under the License. -->
       <artifactId>protobuf-java</artifactId>
       <version>${protobuf.version}</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>tomcat</groupId>
-      <artifactId>jasper-compiler</artifactId>
-      <version>${jasper.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>tomcat</groupId>
-      <artifactId>jasper-runtime</artifactId>
-      <version>${jasper.version}</version>
     </dependency>
     <!-- Global deps. -->
     <dependency>
