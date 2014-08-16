@@ -16,10 +16,13 @@
  * limitations under the License.
  */
 
-d3.json("/getspans/-1548050352879582254", function(spans) {
+var traceid = window.location.search.substring(1).split("=")[1];
+d3.json("/getspans/" + traceid, function(spans) {
+    var maxwidth = 500;
+    var left = 200;
     var tstart = d3.min(spans, function(s) {return s.start});
     var tstop = d3.max(spans, function(s) {return s.stop});
-    var xscale = d3.scale.linear().domain([tstart, tstop]).range([0, 400]);
+    var xscale = d3.scale.linear().domain([tstart, tstop]).range([0, maxwidth]);
 
     gs = d3.select("svg")
       .selectAll("g")
@@ -28,16 +31,30 @@ d3.json("/getspans/-1548050352879582254", function(spans) {
       .append("g")
       .attr("transform",
             function(s, i) {
-              return "translate(" + xscale(s.start) + "," + (i * 20 + 10) + ")"
+              return "translate(0, " + (i * 20 + 10) + ")";
             });
 
     gs.append("rect")
       .attr("height", 20)
-      .attr("width", function(s){return (400 * (s.stop - s.start)) / (tstop - tstart) + 1})
-      .style("fill", "lightblue");
+      .attr("width",
+            function (s) {
+              return (maxwidth * (s.stop - s.start)) / (tstop - tstart) + 1;
+            })
+      .style("fill", "lightblue")
+      .attr("transform",
+            function(s, i) {
+              return "translate(" + (xscale(s.start) + left) + ", 0)";
+            });
 
     gs.append("text")
       .text(function(s){return s.description})
-      .style("alignment-baseline", "hanging");
+      .style("alignment-baseline", "hanging")
+      .attr("transform",
+            function(s, i) {
+              return "translate(" + (xscale(s.start) + left) + ", 0)";
+            });
 
+    gs.append("text")
+      .text(function(s){return s.process_id})
+      .style("alignment-baseline", "hanging");
   });
