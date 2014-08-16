@@ -17,64 +17,62 @@
  */
 var traceid = window.location.search.substring(1).split("=")[1];
 d3.json("/getspans/" + traceid, function(spans) {
-    var rootid = 477902;
-    var maxwidth = 500;
-    var left = 200;
-    var tstart = d3.min(spans, function(s) {return s.start});
-    var tstop = d3.max(spans, function(s) {return s.stop});
-    var xscale = d3.scale.linear().domain([tstart, tstop]).range([0, maxwidth]);
+  var rootid = 477902;
+  var maxwidth = 500;
+  var left = 200;
+  var tstart = d3.min(spans, function(s) {return s.start});
+  var tstop = d3.max(spans, function(s) {return s.stop});
+  var xscale = d3.scale.linear().domain([tstart, tstop]).range([0, maxwidth]);
 
-    /*
-    gs = d3.select("svg")
-      .selectAll("g")
-      .data(spans)
-      .enter()
-      .append("g")
-      .attr("transform",
-            function(s, i) {
-              return "translate(0, " + (i * 20 + 10) + ")";
-            });
-
-    gs.append("rect")
-      .attr("height", 20)
-      .attr("width",
-            function (s) {
-              return (maxwidth * (s.stop - s.start)) / (tstop - tstart) + 1;
-            })
-      .style("fill", "lightblue")
-      .attr("transform",
-            function(s, i) {
-              return "translate(" + (xscale(s.start) + left) + ", 0)";
-            });
-
-    gs.append("text")
-      .text(function(s){return s.description})
-      .style("alignment-baseline", "hanging")
-      .attr("transform",
-            function(s, i) {
-              return "translate(" + (xscale(s.start) + left) + ", 0)";
-            });
-
-    gs.append("text")
-      .text(function(s){return s.process_id})
-      .style("alignment-baseline", "hanging");
-
-  */
   var byparent = d3.nest()
     .sortValues(function(a, b) {return a.start < b.start ? -1 : a.start > b.start ? 1 : 0;})
     .key(function(e) {return e.parent_id}).map(spans, d3.map);
-  //console.log(byparent);
-  //var parents = d3.keys(byparent)
-  //console.log(parents);
   addchildren(byparent.get(rootid), byparent);
-  console.log(byparent.get(rootid));
+  //traverse(byparent.get(rootid), function (e) {console.log(e.description)});
+  var sortedspans = [];
+  traverse(byparent.get(rootid), function (e) {sortedspans.push(e)});
 
+
+  gs = d3.select("svg")
+    .selectAll("g")
+    .data(sortedspans)
+    .enter()
+    .append("g")
+    .attr("transform",
+          function(s, i) {
+            return "translate(0, " + (i * 20 + 10) + ")";
+          });
+
+  gs.append("rect")
+    .attr("height", 20)
+    .attr("width",
+          function (s) {
+            return (maxwidth * (s.stop - s.start)) / (tstop - tstart) + 1;
+          })
+    .style("fill", "lightblue")
+    .attr("transform",
+          function(s, i) {
+            return "translate(" + (xscale(s.start) + left) + ", 0)";
+          });
+
+  gs.append("text")
+    .text(function(s){return s.description})
+    .style("alignment-baseline", "hanging")
+    .attr("transform",
+          function(s, i) {
+            return "translate(" + (xscale(s.start) + left) + ", 0)";
+          });
+
+  gs.append("text")
+    .text(function(s){return s.process_id})
+    .style("alignment-baseline", "hanging");
+
+  /*
   var packed = {span_id: "root", children: byparent.get(rootid)};
   var treeChart = d3.layout.tree().size([500,500]);
   var depthScale = d3.scale.category10([0,1,2]);
   var linkGenerator = d3.svg.diagonal();
   linkGenerator.projection(function (d) {return [d.y, d.x]})
-
   d3.select("svg")
     .append("g")
     .attr("id", "treeG")
@@ -94,7 +92,7 @@ d3.json("/getspans/" + traceid, function(spans) {
 
   d3.selectAll("g.node")
     .append("text")
-    .text(function(d) {return d.span_id || d.process_id || d.description});
+    .text(function(d) {return d.description || d.process_id || d.span_id});
   
   d3.select("#treeG").selectAll("path")
     .data(treeChart.links(treeChart(packed)))
@@ -103,11 +101,22 @@ d3.json("/getspans/" + traceid, function(spans) {
     .style("fill", "none")
     .style("stroke", "black")
     .style("stroke-width", "2px");
+  */
   });
 
-function addchildren (children, byparent) {
-  children.forEach(function(e) {
-                       e.children = byparent.get(e.span_id);
-                       addchildren(e.children, byparent);
-                   });
+function addchildren (nodes, byparent) {
+  nodes.forEach(function(e) {
+      if (byparent.get(e.span_id)) {
+        e.children = byparent.get(e.span_id);
+        addchildren(e.children, byparent);
+      }
+    });
+}
+
+function traverse (t, f) {
+  t.forEach(function(e) {
+      f(e);
+      if (e.children) {
+        traverse (e.children, f);
+      }});
 }
