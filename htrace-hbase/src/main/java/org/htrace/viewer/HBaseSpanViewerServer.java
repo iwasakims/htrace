@@ -68,7 +68,6 @@ public class HBaseSpanViewerServer implements Tool {
     httpServer.addServlet("getspans",
                           HBaseSpanViewerSpansServlet.PREFIX + "/*",
                           HBaseSpanViewerSpansServlet.class);
-    httpServer.addServlet("hello", "/hello", HBaseSpanViewerServlet.class);
     httpServer.start();
     int connIdx = 0;
     httpAddress = httpServer.getConnectorAddress(connIdx++);
