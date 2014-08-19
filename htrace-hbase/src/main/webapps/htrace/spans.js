@@ -15,44 +15,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 var traceid = window.location.search.substring(1).split("=")[1];
 d3.json("/getspans/" + traceid, function(spans) {
   var rootid = 477902;
-  var maxwidth = 500;
-  var left = 200;
-  var tstart = d3.min(spans, function(s) {return s.start});
-  var tstop = d3.max(spans, function(s) {return s.stop});
-  var xscale = d3.scale.linear().domain([tstart, tstop]).range([0, maxwidth]);
-
+  var margin = {top: 50, right: 500, bottom: 50, left: 50};
+  var barheight = 20;
+  var width = 800;
+  var height = spans.length * barheight;
+  var gleftmargin = 300;
+  var tmin = d3.min(spans, function(s) {return s.start});
+  var tmax = d3.max(spans, function(s) {return s.stop});
+  var xscale = d3.time.scale().domain([new Date(tmin), new Date(tmax)]).range([0, width]);
   var byparent = d3.nest()
     .sortValues(function(a, b) {return a.start < b.start ? -1 : a.start > b.start ? 1 : 0;})
     .key(function(e) {return e.parent_id}).map(spans, d3.map);
   addchildren(byparent.get(rootid), byparent);
-  //traverse(byparent.get(rootid), function (e) {console.log(e.description)});
   var sortedspans = [];
-  traverse(byparent.get(rootid), function (e) {sortedspans.push(e)});
+  traverse(byparent.get(rootid), function(e) {sortedspans.push(e)});
 
+  var svg = d3.select("body").append("svg")
+    .attr("width", width + gleftmargin + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-  gs = d3.select("svg")
+  var bars = svg.append("g")
+    .attr("id", "bars")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("transform", "translate(" + gleftmargin + ", 0)");
+
+  var gs = bars.append("g")
+    .attr("id", "spansG")
     .selectAll("g")
     .data(sortedspans)
     .enter()
     .append("g")
     .attr("transform",
           function(s, i) {
-            return "translate(0, " + (i * 20 + 10) + ")";
+            return "translate(0, " + (i * barheight + 5) + ")";
           });
 
   gs.append("rect")
-    .attr("height", 20)
+    .attr("height", barheight - 1)
     .attr("width",
           function (s) {
-            return (maxwidth * (s.stop - s.start)) / (tstop - tstart) + 1;
+            return (width * (s.stop - s.start)) / (tmax - tmin) + 1;
           })
     .style("fill", "lightblue")
     .attr("transform",
           function(s, i) {
-            return "translate(" + (xscale(s.start) + left) + ", 0)";
+            return "translate(" + xscale(new Date(s.start)) + ", 0)";
           });
 
   gs.append("text")
@@ -60,12 +74,36 @@ d3.json("/getspans/" + traceid, function(spans) {
     .style("alignment-baseline", "hanging")
     .attr("transform",
           function(s, i) {
-            return "translate(" + (xscale(s.start) + left) + ", 0)";
+            return "translate(" + xscale(new Date(s.start)) + ", 0)";
           });
 
   gs.append("text")
     .text(function(s){return s.process_id})
-    .style("alignment-baseline", "hanging");
+    .style("alignment-baseline", "hanging")
+    .attr("transform", "translate(" + (- gleftmargin) + ", 0)");
+
+  var axis = d3.svg.axis()
+    .scale(xscale)
+    .orient("top")
+    .tickValues(xscale.domain())
+    .tickFormat(d3.time.format("%x %X.%L"))
+    .tickSize(6, 3);
+
+  bars.append("g")
+    .attr("class", "axis")
+    .call(axis);
+
+  /*
+  var linkGenerator = d3.svg.diagonal();
+  linkGenerator.projection(function (d) {return [d.y, d.x]})
+  d3.select("#treeG").selectAll("path")
+    .data(treeChart.links(treeChart(packed)))
+    .enter().insert("path","g")
+    .attr("d", linkGenerator)
+    .style("fill", "none")
+    .style("stroke", "black")
+    .style("stroke-width", "1px");
+  */
 
   /*
   var packed = {span_id: "root", children: byparent.get(rootid)};
@@ -113,10 +151,10 @@ function addchildren (nodes, byparent) {
     });
 }
 
-function traverse (t, f) {
-  t.forEach(function(e) {
-      f(e);
+function traverse (children, func) {
+  children.forEach(function(e) {
+      func(e);
       if (e.children) {
-        traverse (e.children, f);
+        traverse (e.children, func);
       }});
 }
