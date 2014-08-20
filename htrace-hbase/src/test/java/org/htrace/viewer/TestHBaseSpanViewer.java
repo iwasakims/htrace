@@ -15,35 +15,27 @@
  * limitations under the License.
  */
 
-package org.htrace.impl;
+package org.htrace.viewer;
 
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.client.HTableInterface;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.ResultScanner;
-import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.Assert;
 import org.htrace.SpanReceiver;
 import org.htrace.TraceCreator;
-import org.htrace.protobuf.generated.SpanProtos;
+import org.htrace.impl.HBaseTestUtil;
 
 
 public class TestHBaseSpanViewer {
   private static final Log LOG = LogFactory.getLog(TestHBaseSpanViewer.class);
   private static final HBaseTestingUtility UTIL = new HBaseTestingUtility();
 
+  /*
   @BeforeClass
   public static void setUpBeforeClass() throws Exception {
     UTIL.startMiniCluster(1);
@@ -63,23 +55,10 @@ public class TestHBaseSpanViewer {
     tc.createSimpleTrace();
     tc.createSampleRpcTrace();
     HBaseTestUtil.stopReceiver(receiver);
-    Scan scan = new Scan();
-    scan.addFamily(Bytes.toBytes(HBaseSpanReceiver.DEFAULT_COLUMNFAMILY));
-    scan.setMaxVersions(1);
-    ArrayList<SpanProtos.Span> spans = new ArrayList<SpanProtos.Span>();
     try {
-      ResultScanner scanner = htable.getScanner(scan);
-      Result result = null;
-      while ((result = scanner.next()) != null) {
-        for (Cell cell : result.listCells()) {
-          InputStream in = new ByteArrayInputStream(cell.getQualifierArray(),
-                                                    cell.getQualifierOffset(),
-                                                    cell.getQualifierLength());
-          spans.add(SpanProtos.Span.parseFrom(in));
-        }
-      }
     } catch (IOException e) {
       Assert.fail("failed to get spans from HBase. " + e.getMessage());
     }
   }
+  */
 }

@@ -96,6 +96,15 @@ public class HBaseSpanViewer {
     return spans;
   }
 
+  public List<SpanProtos.Span> getRootSpans(long traceid) throws IOException {
+    startClient();
+    Scan scan = new Scan();
+    List<SpanProtos.Span> spans = new ArrayList<SpanProtos.Span>();
+    //
+    stopClient();
+    return spans;
+  }
+
   /**
    * Run basic test.
    * @throws IOException
