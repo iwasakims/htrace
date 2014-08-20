@@ -43,7 +43,20 @@ public class HBaseSpanViewerTracesServlet extends HttpServlet {
       throws ServletException, IOException {
     final Configuration conf = (Configuration) getServletContext()
         .getAttribute(HttpServer2.CONF_CONTEXT_ATTRIBUTE);
-    response.setContentType("text/plain");
-    response.getWriter().print("gettraces servlet.");
+
+    HBaseSpanViewer viewer = new HBaseSpanViewer(conf);
+    response.setContentType("application/javascript");
+    PrintWriter out = response.getWriter();
+    out.print("[");
+    boolean first = true;
+    for (SpanProtos.Span span : viewer.getRootSpans()) {
+      if (first) {
+        first = false;
+      } else {
+        out.print(",");
+      }
+      out.print(JsonFormat.printToString(span));
+    }
+    out.print("]");
   }
 }

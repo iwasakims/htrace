@@ -63,7 +63,7 @@ public class HBaseSpanViewerServer implements Tool {
     httpServer = builder.build();
     httpServer.setAttribute("htrace", this);
     httpServer.addServlet("gettraces",
-                          HBaseSpanViewerTracesServlet.PREFIX + "/*",
+                          HBaseSpanViewerTracesServlet.PREFIX,
                           HBaseSpanViewerTracesServlet.class);
     httpServer.addServlet("getspans",
                           HBaseSpanViewerSpansServlet.PREFIX + "/*",

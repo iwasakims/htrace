@@ -47,6 +47,7 @@ public class HBaseSpanViewer {
   private HTableInterface htable;
   private byte[] table;
   private byte[] cf; 
+  private byte[] icf; 
 
   public HBaseSpanViewer(Configuration conf) {
     this.conf = conf;
@@ -54,6 +55,8 @@ public class HBaseSpanViewer {
                                         HBaseSpanReceiver.DEFAULT_TABLE));
     this.cf = Bytes.toBytes(conf.get(HBaseSpanReceiver.COLUMNFAMILY_KEY,
                                      HBaseSpanReceiver.DEFAULT_COLUMNFAMILY));
+    this.icf = Bytes.toBytes(conf.get(HBaseSpanReceiver.INDEXFAMILY_KEY,
+                                      HBaseSpanReceiver.DEFAULT_INDEXFAMILY));
   }
 
   public void startClient() {
@@ -86,6 +89,7 @@ public class HBaseSpanViewer {
     startClient();
     List<SpanProtos.Span> spans = new ArrayList<SpanProtos.Span>();
     Get get = new Get(Bytes.toBytes(traceid));
+    get.addFamily(this.cf);
     for (Cell cell : htable.get(get).listCells()) {
       InputStream in = new ByteArrayInputStream(cell.getQualifierArray(),
                                                 cell.getQualifierOffset(),
@@ -99,8 +103,7 @@ public class HBaseSpanViewer {
   public List<SpanProtos.Span> getRootSpans() throws IOException {
     startClient();
     Scan scan = new Scan();
-    scan.addColumn(Bytes.toBytes(HBaseSpanReceiver.DEFAULT_INDEXFAMILY),
-                   HBaseSpanReceiver.INDEX_SPAN_QUAL);
+    scan.addColumn(this.icf, HBaseSpanReceiver.INDEX_SPAN_QUAL);
     List<SpanProtos.Span> spans = new ArrayList<SpanProtos.Span>();
     ResultScanner scanner = htable.getScanner(scan);
     Result result = null;
