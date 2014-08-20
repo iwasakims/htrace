@@ -112,6 +112,25 @@ public class TestHBaseSpanReceiver {
     Assert.assertEquals(1, spansByParentId.get(rpcChild2.getSpanId()).size());
     Span rpcChild3 = spansByParentId.get(rpcChild2.getSpanId()).iterator().next();
     Assert.assertEquals(0, spansByParentId.get(rpcChild3.getSpanId()).size());
+
+    Scan iscan = new Scan();
+    iscan.addColumn(Bytes.toBytes(HBaseSpanReceiver.DEFAULT_INDEXFAMILY),
+                    HBaseSpanReceiver.INDEX_SPAN_QUAL);
+    try {
+      ResultScanner scanner = htable.getScanner(iscan);
+      Result result = null;
+      while ((result = scanner.next()) != null) {
+        for (Cell cell : result.listCells()) {
+          InputStream in = new ByteArrayInputStream(cell.getValueArray(),
+                                                    cell.getValueOffset(),
+                                                    cell.getValueLength());
+          Assert.assertEquals(SpanProtos.Span.parseFrom(in).getParentId(),
+                              Span.ROOT_SPAN_ID);
+        }
+      }
+    } catch (IOException e) {
+      Assert.fail("failed to get spans from index family. " + e.getMessage());
+    }
   }
 
   private class TestSpan implements Span {

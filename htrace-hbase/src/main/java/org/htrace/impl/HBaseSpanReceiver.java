@@ -74,6 +74,10 @@ public class HBaseSpanReceiver implements SpanReceiver {
   public static final String DEFAULT_TABLE = "htrace";
   public static final String COLUMNFAMILY_KEY = "htrace.hbase.columnfamily";
   public static final String DEFAULT_COLUMNFAMILY = "s";
+  public static final String INDEXFAMILY_KEY = "htrace.hbase.indexfamily";
+  public static final String DEFAULT_INDEXFAMILY = "i";
+  public static final byte[] INDEX_SPAN_QUAL = Bytes.toBytes("s");
+  public static final byte[] INDEX_TIME_QUAL = Bytes.toBytes("t");
 
   /**
    * How long this receiver will try and wait for all threads to shutdown.
@@ -111,6 +115,7 @@ public class HBaseSpanReceiver implements SpanReceiver {
   private Configuration hconf;
   private byte[] table;
   private byte[] cf;
+  private byte[] icf;
   private int maxSpanBatchSize;
 
   public HBaseSpanReceiver() {
@@ -126,6 +131,7 @@ public class HBaseSpanReceiver implements SpanReceiver {
     this.hconf = HBaseConfiguration.create();
     this.table = Bytes.toBytes(conf.get(TABLE_KEY, DEFAULT_TABLE));
     this.cf = Bytes.toBytes(conf.get(COLUMNFAMILY_KEY, DEFAULT_COLUMNFAMILY));
+    this.icf = Bytes.toBytes(conf.get(INDEXFAMILY_KEY, DEFAULT_INDEXFAMILY));
     this.maxSpanBatchSize = conf.getInt(MAX_SPAN_BATCH_SIZE_KEY,
                                         DEFAULT_MAX_SPAN_BATCH_SIZE);
     String quorum = conf.get(COLLECTOR_QUORUM_KEY, DEFAULT_COLLECTOR_QUORUM);
@@ -215,6 +221,14 @@ public class HBaseSpanReceiver implements SpanReceiver {
             put.add(HBaseSpanReceiver.this.cf,
                     sbuilder.build().toByteArray(),
                     null);
+            if (span.getParentId() == Span.ROOT_SPAN_ID) {
+              put.add(HBaseSpanReceiver.this.icf,
+                      INDEX_TIME_QUAL,
+                      Bytes.toBytes(span.getStartTimeMillis()));
+              put.add(HBaseSpanReceiver.this.icf,
+                      INDEX_SPAN_QUAL,
+                      sbuilder.build().toByteArray());
+            }
             this.htable.put(put);
           }
           // clear the list for the next time through.
@@ -319,7 +333,7 @@ public class HBaseSpanReceiver implements SpanReceiver {
    * Run basic test.
    * @throws IOException
    */
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) throws Exception {
     HBaseSpanReceiver receiver = new HBaseSpanReceiver();
     receiver.configure(new HBaseHTraceConfiguration(HBaseConfiguration.create()));
     org.htrace.Trace.addReceiver(receiver);
@@ -327,10 +341,20 @@ public class HBaseSpanReceiver implements SpanReceiver {
         org.htrace.Trace.startSpan("HBaseSpanReceiver.main.parent",
                                    org.htrace.Sampler.ALWAYS);
     long traceid = parent.getSpan().getTraceId();
-    org.htrace.TraceScope child =
-        org.htrace.Trace.startSpan("HBaseSpanReceiver.main.child",
+    org.htrace.TraceScope child1 =
+        org.htrace.Trace.startSpan("HBaseSpanReceiver.main.child.1",
                                    parent.getSpan());
-    child.close();
+    org.htrace.TraceScope child2 =
+        org.htrace.Trace.startSpan("HBaseSpanReceiver.main.child.2",
+                                   parent.getSpan());
+    org.htrace.TraceScope gchild =
+        org.htrace.Trace.startSpan("HBaseSpanReceiver.main.grandchild",
+                                   child1.getSpan());
+    Thread.sleep(10);
+    gchild.close();
+    child2.close();
+    Thread.sleep(10);
+    child1.close();
     parent.close();
     receiver.close();
     System.out.println("trace id: " + traceid);

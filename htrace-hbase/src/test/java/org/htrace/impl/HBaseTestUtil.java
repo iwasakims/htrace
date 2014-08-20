@@ -26,6 +26,7 @@ import org.apache.hadoop.hbase.HBaseTestingUtility;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.trace.HBaseHTraceConfiguration;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Assert;
 import org.htrace.SpanReceiver;
 import org.htrace.HTraceConfiguration;
@@ -51,8 +52,9 @@ public class HBaseTestUtil {
   public static HTableInterface createTable(HBaseTestingUtility util) {
     HTableInterface htable = null;
     try { 
-      htable = util.createTable(HBaseSpanReceiver.DEFAULT_TABLE,
-                                HBaseSpanReceiver.DEFAULT_COLUMNFAMILY);
+      htable = util.createTable(Bytes.toBytes(HBaseSpanReceiver.DEFAULT_TABLE),
+                                new byte[][]{Bytes.toBytes(HBaseSpanReceiver.DEFAULT_COLUMNFAMILY),
+                                             Bytes.toBytes(HBaseSpanReceiver.DEFAULT_INDEXFAMILY)});
     } catch (IOException e) {
       Assert.fail("failed to create htrace table. " + e.getMessage());
     }
