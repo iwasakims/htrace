@@ -96,11 +96,22 @@ public class HBaseSpanViewer {
     return spans;
   }
 
-  public List<SpanProtos.Span> getRootSpans(long traceid) throws IOException {
+  public List<SpanProtos.Span> getRootSpans() throws IOException {
     startClient();
     Scan scan = new Scan();
+    scan.addColumn(Bytes.toBytes(HBaseSpanReceiver.DEFAULT_INDEXFAMILY),
+                   HBaseSpanReceiver.INDEX_SPAN_QUAL);
     List<SpanProtos.Span> spans = new ArrayList<SpanProtos.Span>();
-    //
+    ResultScanner scanner = htable.getScanner(scan);
+    Result result = null;
+    while ((result = scanner.next()) != null) {
+      for (Cell cell : result.listCells()) {
+        InputStream in = new ByteArrayInputStream(cell.getValueArray(),
+                                                  cell.getValueOffset(),
+                                                  cell.getValueLength());
+        spans.add(SpanProtos.Span.parseFrom(in));
+      }
+    }
     stopClient();
     return spans;
   }
@@ -111,9 +122,16 @@ public class HBaseSpanViewer {
    */
   public static void main(String[] args) throws IOException {
     HBaseSpanViewer viewer = new HBaseSpanViewer(HBaseConfiguration.create());
-    List<SpanProtos.Span> spans = viewer.getSpans(Long.parseLong(args[0]));
-    for (SpanProtos.Span span : spans) {
-      System.out.println(JsonFormat.printToString(span));
+    if (args.length == 0) {
+      List<SpanProtos.Span> spans = viewer.getRootSpans();
+      for (SpanProtos.Span span : spans) {
+        System.out.println(JsonFormat.printToString(span));
+      }
+    } else {
+      List<SpanProtos.Span> spans = viewer.getSpans(Long.parseLong(args[0]));
+      for (SpanProtos.Span span : spans) {
+        System.out.println(JsonFormat.printToString(span));
+      }
     }
     viewer.stopClient();
   }
