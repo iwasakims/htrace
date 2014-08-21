@@ -17,16 +17,17 @@
  */
 
 d3.json("/gettraces", function(spans) {
-
     var table = d3.select("body")
       .append("table")
-      .attr("style", "white-space: nowrap;");
+      .attr("style", "white-space: nowrap;")
+      .attr("class", "table table-condensed");
     var thead = table.append("thead");    
     var tbody = table.append("tbody");
+    var columns = ["start", "trace_id", "process_id", "description"];
 
     thead.append("tr")
       .selectAll("th")
-      .data(["start time", "process id", "description"])
+      .data(columns)
       .enter()
       .append("th")
       .html(function(d) { return d; });
@@ -37,15 +38,16 @@ d3.json("/gettraces", function(spans) {
       .append("tr")
       .sort(function(a, b) {
           return a.start > b.start ? -1 : a.start < b.start ? 1 : 0;
+        })
+      .attr("onclick", function(d) {
+          return "window.location='spans.html?traceid=" + d.trace_id + "'";
         });
 
     rows.selectAll("td")
-      .data(function(span) {
-          return [span.start, span.process_id, span.description];
+      .data(function(s) {
+          return columns.map(function(c) { return s[c]; });
         })
       .enter()
       .append("td")
       .html(function(d) { return d; });
-
-    console.log(table);
   });
