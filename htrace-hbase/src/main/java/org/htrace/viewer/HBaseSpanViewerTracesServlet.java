@@ -35,6 +35,7 @@ import org.htrace.protobuf.generated.SpanProtos;
 public class HBaseSpanViewerTracesServlet extends HttpServlet {
   private static final Log LOG = LogFactory.getLog(HBaseSpanViewerTracesServlet.class);
   public static final String PREFIX = "/gettraces";
+  private HBaseSpanViewer viewer;
 
   @Override
   @SuppressWarnings("unchecked")
@@ -43,12 +44,11 @@ public class HBaseSpanViewerTracesServlet extends HttpServlet {
     final Configuration conf = (Configuration) getServletContext()
         .getAttribute(HttpServer2.CONF_CONTEXT_ATTRIBUTE);
 
-    HBaseSpanViewer viewer = new HBaseSpanViewer(conf);
     response.setContentType("application/javascript");
     PrintWriter out = response.getWriter();
     out.print("[");
     boolean first = true;
-    for (SpanProtos.Span span : viewer.getRootSpans()) {
+    for (SpanProtos.Span span : this.viewer.getRootSpans()) {
       if (first) {
         first = false;
       } else {
@@ -70,5 +70,17 @@ public class HBaseSpanViewerTracesServlet extends HttpServlet {
       out.print("}");
     }
     out.print("]");
+  }
+
+  @Override
+  public void init() throws ServletException {
+    final Configuration conf = (Configuration) getServletContext()
+        .getAttribute(HttpServer2.CONF_CONTEXT_ATTRIBUTE);
+     this.viewer = new HBaseSpanViewer(conf);
+  }
+
+  @Override
+  public void destroy() {
+    this.viewer.close();
   }
 }

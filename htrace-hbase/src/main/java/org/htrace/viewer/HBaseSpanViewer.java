@@ -59,6 +59,10 @@ public class HBaseSpanViewer {
                                       HBaseSpanReceiver.DEFAULT_INDEXFAMILY));
   }
 
+  public void close() {
+    stopClient();
+  }
+
   public void startClient() {
     if (this.htable == null) {
       try {
@@ -90,13 +94,17 @@ public class HBaseSpanViewer {
     List<SpanProtos.Span> spans = new ArrayList<SpanProtos.Span>();
     Get get = new Get(Bytes.toBytes(traceid));
     get.addFamily(this.cf);
-    for (Cell cell : htable.get(get).listCells()) {
-      InputStream in = new ByteArrayInputStream(cell.getQualifierArray(),
-                                                cell.getQualifierOffset(),
-                                                cell.getQualifierLength());
-      spans.add(SpanProtos.Span.parseFrom(in));
+    try {
+      for (Cell cell : htable.get(get).listCells()) {
+        InputStream in = new ByteArrayInputStream(cell.getQualifierArray(),
+                                                  cell.getQualifierOffset(),
+                                                  cell.getQualifierLength());
+        spans.add(SpanProtos.Span.parseFrom(in));
+      }
+    } catch (IOException e) {
+      LOG.warn("Failed to get spans from HBase. " + e.getMessage());
+      stopClient();
     }
-    stopClient();
     return spans;
   }
 
@@ -105,17 +113,21 @@ public class HBaseSpanViewer {
     Scan scan = new Scan();
     scan.addColumn(this.icf, HBaseSpanReceiver.INDEX_SPAN_QUAL);
     List<SpanProtos.Span> spans = new ArrayList<SpanProtos.Span>();
-    ResultScanner scanner = htable.getScanner(scan);
-    Result result = null;
-    while ((result = scanner.next()) != null) {
-      for (Cell cell : result.listCells()) {
-        InputStream in = new ByteArrayInputStream(cell.getValueArray(),
-                                                  cell.getValueOffset(),
-                                                  cell.getValueLength());
-        spans.add(SpanProtos.Span.parseFrom(in));
+    try {
+      ResultScanner scanner = htable.getScanner(scan);
+      Result result = null;
+      while ((result = scanner.next()) != null) {
+        for (Cell cell : result.listCells()) {
+          InputStream in = new ByteArrayInputStream(cell.getValueArray(),
+                                                    cell.getValueOffset(),
+                                                    cell.getValueLength());
+          spans.add(SpanProtos.Span.parseFrom(in));
+        }
       }
+    } catch (IOException e) {
+      LOG.warn("Failed to get root spans from HBase. " + e.getMessage());
+      stopClient();
     }
-    stopClient();
     return spans;
   }
 
@@ -136,6 +148,6 @@ public class HBaseSpanViewer {
         System.out.println(JsonFormat.printToString(span));
       }
     }
-    viewer.stopClient();
+    viewer.close();
   }
 }
