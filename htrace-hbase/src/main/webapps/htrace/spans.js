@@ -55,10 +55,9 @@ d3.json("/getspans/" + traceid, function(spans) {
       .data(sortedspans)
       .enter()
       .append("g")
-      .attr("transform",
-            function(s, i) {
-              return "translate(0, " + (i * barheight + 5) + ")";
-            });
+      .attr("transform", function(s, i) {
+          return "translate(0, " + (i * barheight + 5) + ")";
+        });
 
     span_g.append("text")
       .text(function(s){ return s.process_id; })
@@ -66,17 +65,15 @@ d3.json("/getspans/" + traceid, function(spans) {
       .attr("transform", "translate(" + (- gleftmargin) + ", 0)");
 
     var rect_g = span_g.append("g")
-      .attr("transform",
-            function(s) {
-              return "translate(" + xscale(new Date(s.start)) + ", 0)";
-            });
+      .attr("transform", function(s) {
+          return "translate(" + xscale(new Date(s.start)) + ", 0)";
+        });
 
     rect_g.append("rect")
       .attr("height", barheight - 1)
-      .attr("width",
-            function (s) {
-              return (width * (s.stop - s.start)) / (tmax - tmin) + 1;
-            })
+      .attr("width", function (s) {
+          return (width * (s.stop - s.start)) / (tmax - tmin) + 1;
+        })
       .style("fill", "lightblue");
 
     rect_g.append("text")
@@ -88,10 +85,7 @@ d3.json("/getspans/" + traceid, function(spans) {
       .style("alignment-baseline", "baseline")
       .style("text-anchor", "end")
       .style("font-size", "10px")
-      .attr("transform",
-            function(s, i) {
-              return "translate(0, 10)";
-            });
+      .attr("transform", function(s, i) { return "translate(0, 10)"; });
 
     var axis = d3.svg.axis()
       .scale(xscale)
@@ -119,5 +113,6 @@ function traverse (children, func) {
       func(e);
       if (e.children) {
         traverse (e.children, func);
-      }});
+      }
+    });
 }
