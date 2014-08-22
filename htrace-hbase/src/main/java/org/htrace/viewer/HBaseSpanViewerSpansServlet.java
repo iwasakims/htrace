@@ -36,7 +36,13 @@ import org.htrace.protobuf.generated.SpanProtos;
 public class HBaseSpanViewerSpansServlet extends HttpServlet {
   private static final Log LOG = LogFactory.getLog(HBaseSpanViewerSpansServlet.class);
   public static final String PREFIX = "/getspans";
-  private HBaseSpanViewer viewer;
+  private static final ThreadLocal<HBaseSpanViewer> tlviewer =
+      new ThreadLocal<HBaseSpanViewer>() {
+        @Override
+        protected HBaseSpanViewer initialValue() {
+          return null;
+        }
+      };
 
   @Override
   @SuppressWarnings("unchecked")
@@ -49,12 +55,19 @@ public class HBaseSpanViewerSpansServlet extends HttpServlet {
       response.getWriter().print("Invalid input");
       return;
     }
+    HBaseSpanViewer viewer = tlviewer.get();
+    if (viewer == null) {
+      final Configuration conf = (Configuration) getServletContext()
+        .getAttribute(HttpServer2.CONF_CONTEXT_ATTRIBUTE);
+      viewer = new HBaseSpanViewer(conf);
+      tlviewer.set(viewer);
+    }
     Long traceid = Long.parseLong(path.substring(1));
     response.setContentType("application/javascript");
     PrintWriter out = response.getWriter();
     out.print("[");
     boolean first = true;
-    for (SpanProtos.Span span : this.viewer.getSpans(traceid)) {
+    for (SpanProtos.Span span : viewer.getSpans(traceid)) {
       if (first) {
         first = false;
       } else {
@@ -67,14 +80,14 @@ public class HBaseSpanViewerSpansServlet extends HttpServlet {
 
   @Override
   public void init() throws ServletException {
-    final Configuration conf = (Configuration) getServletContext()
-        .getAttribute(HttpServer2.CONF_CONTEXT_ATTRIBUTE);
-     this.viewer = new HBaseSpanViewer(conf);
   }
 
   @Override
   public void destroy() {
-    this.viewer.close();
+    HBaseSpanViewer viewer = tlviewer.get();
+    if (viewer != null) {
+      viewer.close();
+    }
   }
 
   public static String validatePath(String p) {
