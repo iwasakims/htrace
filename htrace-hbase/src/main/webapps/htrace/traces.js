@@ -23,7 +23,7 @@ d3.json("/gettraces", function(spans) {
       .attr("class", "table table-condensed");
     var thead = table.append("thead");    
     var tbody = table.append("tbody");
-    var columns = ["start", "trace_id", "process_id", "description"];
+    var columns = ["start", "process_id", "description"];
 
     thead.append("tr")
       .selectAll("th")
@@ -50,4 +50,9 @@ d3.json("/gettraces", function(spans) {
       .enter()
       .append("td")
       .html(function(d) { return d; });
+
+    rows.select("td")
+      .html(function(d) {
+          return d3.time.format("%x %X.%L")(new Date(d.start));
+        });
   });

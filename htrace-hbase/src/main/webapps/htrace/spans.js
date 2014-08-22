@@ -24,8 +24,8 @@ d3.json("/getspans/" + traceid, function(spans) {
     var width = 800;
     var height = spans.length * barheight;
     var gleftmargin = 300;
-    var tmin = d3.min(spans, function(s) {return s.start});
-    var tmax = d3.max(spans, function(s) {return s.stop});
+    var tmin = d3.min(spans, function(s) { return s.start; });
+    var tmax = d3.max(spans, function(s) { return s.stop; });
     var xscale = d3.time.scale()
       .domain([new Date(tmin), new Date(tmax)]).range([0, width]);
     var byparent = d3.nest()
@@ -36,7 +36,7 @@ d3.json("/getspans/" + traceid, function(spans) {
       .map(spans, d3.map);
     addchildren(byparent.get(rootid), byparent);
     var sortedspans = [];
-    traverse(byparent.get(rootid), function(e) {sortedspans.push(e)});
+    traverse(byparent.get(rootid), function(e) { sortedspans.push(e); });
 
     var svg = d3.select("body").append("svg")
       .attr("width", width + gleftmargin + margin.left + margin.right)
@@ -50,8 +50,7 @@ d3.json("/getspans/" + traceid, function(spans) {
       .attr("height", height)
       .attr("transform", "translate(" + gleftmargin + ", 0)");
     
-    var gs = bars.append("g")
-      .attr("id", "spansG")
+    var span_g = bars.append("g")
       .selectAll("g")
       .data(sortedspans)
       .enter()
@@ -61,30 +60,38 @@ d3.json("/getspans/" + traceid, function(spans) {
               return "translate(0, " + (i * barheight + 5) + ")";
             });
 
-    gs.append("rect")
+    span_g.append("text")
+      .text(function(s){ return s.process_id; })
+      .style("alignment-baseline", "hanging")
+      .attr("transform", "translate(" + (- gleftmargin) + ", 0)");
+
+    var rect_g = span_g.append("g")
+      .attr("transform",
+            function(s) {
+              return "translate(" + xscale(new Date(s.start)) + ", 0)";
+            });
+
+    rect_g.append("rect")
       .attr("height", barheight - 1)
       .attr("width",
             function (s) {
               return (width * (s.stop - s.start)) / (tmax - tmin) + 1;
             })
-      .style("fill", "lightblue")
+      .style("fill", "lightblue");
+
+    rect_g.append("text")
+      .text(function(s){ return s.description; })
+      .style("alignment-baseline", "hanging");
+
+    rect_g.append("text")
+      .text(function(s){ return s.stop - s.start; })
+      .style("alignment-baseline", "baseline")
+      .style("text-anchor", "end")
+      .style("font-size", "10px")
       .attr("transform",
             function(s, i) {
-              return "translate(" + xscale(new Date(s.start)) + ", 0)";
+              return "translate(0, 10)";
             });
-
-    gs.append("text")
-      .text(function(s){return s.description})
-      .style("alignment-baseline", "hanging")
-      .attr("transform",
-            function(s, i) {
-              return "translate(" + xscale(new Date(s.start)) + ", 0)";
-            });
-
-    gs.append("text")
-      .text(function(s){return s.process_id})
-      .style("alignment-baseline", "hanging")
-      .attr("transform", "translate(" + (- gleftmargin) + ", 0)");
 
     var axis = d3.svg.axis()
       .scale(xscale)
@@ -96,54 +103,6 @@ d3.json("/getspans/" + traceid, function(spans) {
     bars.append("g")
       .attr("class", "axis")
       .call(axis);
-
-    /*
-    var linkGenerator = d3.svg.diagonal();
-    linkGenerator.projection(function (d) {return [d.y, d.x]})
-    d3.select("#treeG").selectAll("path")
-      .data(treeChart.links(treeChart(packed)))
-      .enter().insert("path","g")
-      .attr("d", linkGenerator)
-      .style("fill", "none")
-      .style("stroke", "black")
-      .style("stroke-width", "1px");
-    */
-  
-    /*
-    var packed = {span_id: "root", children: byparent.get(rootid)};
-    var treeChart = d3.layout.tree().size([500,500]);
-    var depthScale = d3.scale.category10([0,1,2]);
-    var linkGenerator = d3.svg.diagonal();
-    linkGenerator.projection(function (d) {return [d.y, d.x]})
-    d3.select("svg")
-      .append("g")
-      .attr("id", "treeG")
-      .selectAll("g")
-      .data(treeChart(packed))
-      .enter()
-      .append("g")
-      .attr("class", "node")
-      .attr("transform", function(d) {return "translate(" +d.y+","+d.x+")"});
-  
-    d3.selectAll("g.node")
-      .append("circle")
-      .attr("r", 10)
-      .style("fill", function(d) {return depthScale(d.depth)})
-      .style("stroke", "white")
-      .style("stroke-width", "2px");
-  
-    d3.selectAll("g.node")
-      .append("text")
-      .text(function(d) {return d.description || d.process_id || d.span_id});
-    
-    d3.select("#treeG").selectAll("path")
-      .data(treeChart.links(treeChart(packed)))
-      .enter().insert("path","g")
-      .attr("d", linkGenerator)
-      .style("fill", "none")
-      .style("stroke", "black")
-      .style("stroke-width", "2px");
-    */
   });
 
 function addchildren (nodes, byparent) {
