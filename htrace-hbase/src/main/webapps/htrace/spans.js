@@ -18,6 +18,10 @@
 
 var traceid = window.location.search.substring(1).split("=")[1];
 d3.json("/getspans/" + traceid, function(spans) {
+    spans.map(function(s) {
+        s.start = parseInt(s.start);
+        s.stop = parseInt(s.stop);
+      });
     var rootid = 477902;
     var margin = {top: 50, right: 500, bottom: 50, left: 50};
     var barheight = 20;

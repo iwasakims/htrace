@@ -17,7 +17,6 @@
 
 package org.htrace.viewer;
 
-import com.googlecode.protobuf.format.JsonFormat;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.servlet.ServletContext;
@@ -73,7 +72,7 @@ public class HBaseSpanViewerSpansServlet extends HttpServlet {
       } else {
         out.print(",");
       }
-      out.print(JsonFormat.printToString(span));
+      out.print(HBaseSpanViewer.toJsonString(span));
     }
     out.print("]");
   }

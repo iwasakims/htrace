@@ -17,12 +17,19 @@
 
 package org.htrace.viewer;
 
-import com.googlecode.protobuf.format.JsonFormat;
+import com.google.protobuf.Message;
+import com.google.protobuf.Descriptors.FieldDescriptor;
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -131,6 +138,70 @@ public class HBaseSpanViewer {
     return spans;
   }
 
+  public static String toJsonString(final Message message) throws IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    OutputStreamWriter writer =
+        new OutputStreamWriter(out, Charset.defaultCharset());
+    appendJsonString(message, writer);
+    writer.flush();
+    out.flush();
+    return out.toString();
+  }
+
+  public static void appendJsonString(final Message message,
+                                        OutputStreamWriter writer) throws IOException {
+    writer.append("{");
+    for (Iterator<Map.Entry<FieldDescriptor, Object>> iter =
+           message.getAllFields().entrySet().iterator(); iter.hasNext();) {
+      Map.Entry<FieldDescriptor, Object> field = iter.next();
+      appendFields(field.getKey(), field.getValue(), writer);
+      if (iter.hasNext()) {
+        writer.append(",");
+      }
+    }
+    writer.append("}");
+  }
+  
+
+  private static void appendFields(FieldDescriptor fd,
+                                   Object value, 
+                                   OutputStreamWriter writer) throws IOException {
+    writer.append("\"");
+    writer.append(fd.getName());
+    writer.append("\"");
+    writer.append(":");
+    if (fd.isRepeated()) {
+      writer.append("[");
+      for (Iterator<?> it = ((List<?>) value).iterator(); it.hasNext();) {
+        appendValue(fd, it.next(), writer);
+        if (it.hasNext()) {
+          writer.append(",");
+        }
+      }
+      writer.append("]");
+    } else {
+      appendValue(fd, value, writer);
+    }
+  }
+
+  private static void appendValue(FieldDescriptor fd,
+                                  Object value, 
+                                  OutputStreamWriter writer) throws IOException {
+    switch (fd.getType()) {
+    case INT64: // write int as string for handling in javascript
+    case STRING:
+      writer.append("\"");
+      writer.append(value.toString());
+      writer.append("\"");
+      break;
+    case MESSAGE:
+      appendJsonString((Message)value, writer);
+      break;
+    default:
+      throw new IOException("unexpected field type.");
+    }
+  }
+
   /**
    * Run basic test.
    * @throws IOException
@@ -140,12 +211,12 @@ public class HBaseSpanViewer {
     if (args.length == 0) {
       List<SpanProtos.Span> spans = viewer.getRootSpans();
       for (SpanProtos.Span span : spans) {
-        System.out.println(JsonFormat.printToString(span));
+        System.out.println(toJsonString(span));
       }
     } else {
       List<SpanProtos.Span> spans = viewer.getSpans(Long.parseLong(args[0]));
       for (SpanProtos.Span span : spans) {
-        System.out.println(JsonFormat.printToString(span));
+        System.out.println(toJsonString(span));
       }
     }
     viewer.close();

@@ -31,9 +31,12 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.trace.HBaseHTraceConfiguration;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.htrace.HTraceConfiguration;
+import org.htrace.Sampler;
 import org.htrace.Span;
 import org.htrace.SpanReceiver;
 import org.htrace.TimelineAnnotation;
+import org.htrace.Trace;
+import org.htrace.TraceScope;
 import org.htrace.protobuf.generated.SpanProtos;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -336,22 +339,24 @@ public class HBaseSpanReceiver implements SpanReceiver {
   public static void main(String[] args) throws Exception {
     HBaseSpanReceiver receiver = new HBaseSpanReceiver();
     receiver.configure(new HBaseHTraceConfiguration(HBaseConfiguration.create()));
-    org.htrace.Trace.addReceiver(receiver);
-    org.htrace.TraceScope parent = 
-        org.htrace.Trace.startSpan("HBaseSpanReceiver.main.parent",
-                                   org.htrace.Sampler.ALWAYS);
-    long traceid = parent.getSpan().getTraceId();
-    org.htrace.TraceScope child1 =
-        org.htrace.Trace.startSpan("HBaseSpanReceiver.main.child.1",
-                                   parent.getSpan());
-    org.htrace.TraceScope child2 =
-        org.htrace.Trace.startSpan("HBaseSpanReceiver.main.child.2",
-                                   parent.getSpan());
-    org.htrace.TraceScope gchild =
-        org.htrace.Trace.startSpan("HBaseSpanReceiver.main.grandchild",
-                                   child1.getSpan());
+    Trace.addReceiver(receiver);
+    TraceScope parent = 
+        Trace.startSpan("HBaseSpanReceiver.main.parent", Sampler.ALWAYS);
     Thread.sleep(10);
+    long traceid = parent.getSpan().getTraceId();
+    TraceScope child1 =
+        Trace.startSpan("HBaseSpanReceiver.main.child.1");
+    Thread.sleep(10);
+    TraceScope child2 =
+        Trace.startSpan("HBaseSpanReceiver.main.child.2", parent.getSpan());
+    Thread.sleep(10);
+    TraceScope gchild =
+        Trace.startSpan("HBaseSpanReceiver.main.grandchild");
+    Trace.addTimelineAnnotation("annotation 1.");
+    Thread.sleep(10);
+    Trace.addTimelineAnnotation("annotation 2.");
     gchild.close();
+    Thread.sleep(10);
     child2.close();
     Thread.sleep(10);
     child1.close();

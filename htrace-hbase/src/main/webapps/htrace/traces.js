@@ -17,6 +17,10 @@
  */
 
 d3.json("/gettraces", function(spans) {
+    spans.map(function(s) {
+        s.start = parseInt(s.start);
+        s.stop = parseInt(s.stop);
+      });
     var table = d3.select("body")
       .append("table")
       .attr("style", "white-space: nowrap;")

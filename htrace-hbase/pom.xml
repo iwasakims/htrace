@@ -34,7 +34,6 @@ language governing permissions and limitations under the License. -->
     <!-- <hadoop.version>3.0.0-SNAPSHOT</hadoop.version> -->
     <hadoop.version>2.4.0</hadoop.version>
     <protobuf.version>2.5.0</protobuf.version>
-    <protobuf.java.format.version>1.2</protobuf.java.format.version>
   </properties>
 
   <build>
@@ -103,11 +102,6 @@ language governing permissions and limitations under the License. -->
       <version>${project.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.googlecode.protobuf-java-format</groupId>
-      <artifactId>protobuf-java-format</artifactId>
-      <version>${protobuf.java.format.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>

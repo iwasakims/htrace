@@ -64,20 +64,7 @@ public class HBaseSpanViewerTracesServlet extends HttpServlet {
       } else {
         out.print(",");
       }
-      out.print("{");
-      // print long as string for handling in JavaScript.
-      out.print("\"trace_id\":\"");
-      out.print(span.getTraceId());
-      out.print("\",");
-      out.print("\"process_id\":\"");
-      out.print(span.getProcessId());
-      out.print("\",");
-      out.print("\"description\":\"");
-      out.print(span.getDescription());
-      out.print("\",");
-      out.print("\"start\":"); // start time as numeric.
-      out.print(span.getStart()); 
-      out.print("}");
+      out.print(HBaseSpanViewer.toJsonString(span));
     }
     out.print("]");
   }
