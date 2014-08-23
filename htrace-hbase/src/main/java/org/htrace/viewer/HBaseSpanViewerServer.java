@@ -40,7 +40,6 @@ public class HBaseSpanViewerServer implements Tool {
   public static final String HTRACE_APPDIR = "webapps";
   private Configuration conf;
   private HttpServer2 httpServer;
-  //private HttpServer httpServer;
   private InetSocketAddress httpAddress;
 
   public void setConf(Configuration conf) {
@@ -57,9 +56,7 @@ public class HBaseSpanViewerServer implements Tool {
     conf.set(HTRACE_VIEWER_HTTP_ADDRESS_KEY, NetUtils.getHostPortString(httpAddress));
     String name = "htrace";
     HttpServer2.Builder builder = new HttpServer2.Builder();
-    //HttpServer.Builder builder = new HttpServer.Builder();
     builder.setName(name).setConf(conf);
-    //builder.setName(name).setConf(conf).setAppDir(HTRACE_APPDIR);
     if (httpAddress.getPort() == 0) {
       builder.setFindPort(true);
     }
@@ -67,7 +64,6 @@ public class HBaseSpanViewerServer implements Tool {
     builder.addEndpoint(uri);
     LOG.info("Starting Web-server for " + name + " at: " + uri);
     httpServer = builder.build();
-    httpServer.setAttribute("htrace", this);
     httpServer.setAttribute(HTRACE_CONF_ATTR, conf);
     httpServer.addServlet("gettraces",
                           HBaseSpanViewerTracesServlet.PREFIX,

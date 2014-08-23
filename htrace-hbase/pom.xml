@@ -44,9 +44,6 @@ language governing permissions and limitations under the License. -->
         <includes>
           <include>webapps/**</include>
         </includes>
-        <excludes>
-          <exclude>**/*.jsp</exclude>
-        </excludes>
       </resource>
     </resources>
     <plugins>
