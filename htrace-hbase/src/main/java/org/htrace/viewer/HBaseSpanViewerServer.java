@@ -25,8 +25,8 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-//import org.apache.hadoop.http.HttpServer2;
-import org.apache.hadoop.hbase.http.HttpServer;
+import org.apache.hadoop.http.HttpServer2;
+//import org.apache.hadoop.hbase.http.HttpServer;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -39,7 +39,8 @@ public class HBaseSpanViewerServer implements Tool {
   public static final String HTRACE_CONF_ATTR = "htrace.conf";
   public static final String HTRACE_APPDIR = "webapps";
   private Configuration conf;
-  private HttpServer httpServer;
+  private HttpServer2 httpServer;
+  //private HttpServer httpServer;
   private InetSocketAddress httpAddress;
 
   public void setConf(Configuration conf) {
@@ -55,9 +56,10 @@ public class HBaseSpanViewerServer implements Tool {
         conf.get(HTRACE_VIEWER_HTTP_ADDRESS_KEY, HTRACE_VIEWER_HTTP_ADDRESS_DEFAULT));
     conf.set(HTRACE_VIEWER_HTTP_ADDRESS_KEY, NetUtils.getHostPortString(httpAddress));
     String name = "htrace";
-    //HttpServer2.Builder builder = new HttpServer2.Builder();
-    HttpServer.Builder builder = new HttpServer.Builder();
-    builder.setName(name).setConf(conf).setAppDir(HTRACE_APPDIR);
+    HttpServer2.Builder builder = new HttpServer2.Builder();
+    //HttpServer.Builder builder = new HttpServer.Builder();
+    builder.setName(name).setConf(conf);
+    //builder.setName(name).setConf(conf).setAppDir(HTRACE_APPDIR);
     if (httpAddress.getPort() == 0) {
       builder.setFindPort(true);
     }

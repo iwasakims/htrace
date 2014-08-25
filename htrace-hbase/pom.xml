@@ -138,6 +138,7 @@ language governing permissions and limitations under the License. -->
         </exclusion>
       </exclusions> 
     </dependency>
+    <!--
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-server</artifactId>
@@ -149,6 +150,7 @@ language governing permissions and limitations under the License. -->
         </exclusion>
       </exclusions> 
     </dependency>
+    -->
     <dependency>
       <groupId>org.apache.hbase</groupId>
       <artifactId>hbase-testing-util</artifactId>
