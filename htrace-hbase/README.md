@@ -8,8 +8,8 @@ and the viewer which retrieves spans from HBase and show them graphically.
 Tutorial
 --------
 
-We are using HBase running in standalone-mode for tracee
-and strage of tracing spans at the same time in this example.
+We are using the same HBase instance running in standalone-mode as a tracee
+and storage of tracing spans at the same time in this example.
 
 At first, get HBase and build it.:
 
@@ -95,6 +95,6 @@ Todo
 ----
 
 - showing timeline annotation in spans view.
-- showing parent-child relationhips in spans view.
-- enableing to focus in/out specfic spans in trace.
+- showing parent-child relationships in spans view.
+- enabling to focus in/out specific spans in trace.
 - limiting the traces shown in list based on time period.
