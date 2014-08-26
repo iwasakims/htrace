@@ -26,7 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.http.HttpServer2;
-//import org.apache.hadoop.hbase.http.HttpServer;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
@@ -38,6 +37,8 @@ public class HBaseSpanViewerServer implements Tool {
   public static final String HTRACE_VIEWER_HTTP_ADDRESS_DEFAULT = "0.0.0.0:16900";
   public static final String HTRACE_CONF_ATTR = "htrace.conf";
   public static final String HTRACE_APPDIR = "webapps";
+  public static final String NAME = "htrace";
+
   private Configuration conf;
   private HttpServer2 httpServer;
   private InetSocketAddress httpAddress;
@@ -54,15 +55,14 @@ public class HBaseSpanViewerServer implements Tool {
     httpAddress = NetUtils.createSocketAddr(
         conf.get(HTRACE_VIEWER_HTTP_ADDRESS_KEY, HTRACE_VIEWER_HTTP_ADDRESS_DEFAULT));
     conf.set(HTRACE_VIEWER_HTTP_ADDRESS_KEY, NetUtils.getHostPortString(httpAddress));
-    String name = "htrace";
     HttpServer2.Builder builder = new HttpServer2.Builder();
-    builder.setName(name).setConf(conf);
+    builder.setName(NAME).setConf(conf);
     if (httpAddress.getPort() == 0) {
       builder.setFindPort(true);
     }
     URI uri = URI.create("http://" + NetUtils.getHostPortString(httpAddress));
     builder.addEndpoint(uri);
-    LOG.info("Starting Web-server for " + name + " at: " + uri);
+    LOG.info("Starting Web-server for " + NAME + " at: " + uri);
     httpServer = builder.build();
     httpServer.setAttribute(HTRACE_CONF_ATTR, conf);
     httpServer.addServlet("gettraces",
@@ -71,9 +71,16 @@ public class HBaseSpanViewerServer implements Tool {
     httpServer.addServlet("getspans",
                           HBaseSpanViewerSpansServlet.PREFIX + "/*",
                           HBaseSpanViewerSpansServlet.class);
+
+    // for webapps/htrace bundled in jar.
+    String rb = httpServer.getClass()
+                          .getClassLoader()
+                          .getResource("webapps/" + NAME)
+                          .toString();
+    httpServer.getWebAppContext().setResourceBase(rb);
+
     httpServer.start();
-    int connIdx = 0;
-    httpAddress = httpServer.getConnectorAddress(connIdx++);
+    httpAddress = httpServer.getConnectorAddress(0);
   }
 
   void join() throws Exception {
