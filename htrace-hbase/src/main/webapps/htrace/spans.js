@@ -40,7 +40,11 @@ d3.json("/getspans/" + traceid, function(spans) {
       .map(spans, d3.map);
     addchildren(byparent.get(rootid), byparent);
     var sortedspans = [];
-    traverse(byparent.get(rootid), function(e) { sortedspans.push(e); });
+    traverse(1, byparent.get(rootid), function(e, l) {
+        e.level = l;
+        sortedspans.push(e);
+      });
+    console.log(sortedspans);
 
     var svg = d3.select("body").append("svg")
       .attr("width", width + gleftmargin + margin.left + margin.right)
@@ -66,7 +70,9 @@ d3.json("/getspans/" + traceid, function(spans) {
     span_g.append("text")
       .text(function(s){ return s.process_id; })
       .style("alignment-baseline", "hanging")
-      .attr("transform", "translate(" + (- gleftmargin) + ", 0)");
+      .attr("transform", function(s) {
+          return "translate(" + (s.level * 5 - gleftmargin) + ", 0)";
+        });
 
     var rect_g = span_g.append("g")
       .attr("transform", function(s) {
@@ -112,11 +118,11 @@ function addchildren (nodes, byparent) {
     });
 }
 
-function traverse (children, func) {
+function traverse (level, children, func) {
   children.forEach(function(e) {
-      func(e);
+      func(e, level);
       if (e.children) {
-        traverse (e.children, func);
+        traverse (level + 1, e.children, func);
       }
     });
 }
