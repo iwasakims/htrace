@@ -21,6 +21,9 @@ d3.json("/getspans/" + traceid, function(spans) {
     spans.map(function(s) {
         s.start = parseInt(s.start);
         s.stop = parseInt(s.stop);
+        if (s.timeline) {
+          s.timeline.forEach(function(t) { t.time = parseInt(t.time); });
+        }
       });
     var rootid = "477902";
     var margin = {top: 50, right: 500, bottom: 50, left: 50};
@@ -110,10 +113,37 @@ d3.json("/getspans/" + traceid, function(spans) {
       .attr("height", 8)
       .attr("width", 8)
       .attr("transform", function(t) {
-          return "translate(" + xscale(new Date(parseInt(t.time))) + ", 11)";
+          return "translate(" + xscale(t.time) + ", 11)";
         })
       .classed("timeline");
 
+    var popup = d3.select("body")
+      .append("div")
+      .attr("class", "popup")
+      .style("opacity", 0);
+
+    bars.selectAll("g.timeline")
+      .on("mouseover", function(d) {
+          popup.transition()
+            .duration(300)
+            .style("opacity", .95);
+          var text = "<table>";
+          d.timeline.forEach(function (t) {
+              text += "<tr><td>" + (t.time - tmin) + "</td>";
+              text += "<td> : " + t.message + "<td/></tr>";
+            });
+          text += "</table>"
+          popup.html(text)
+            .style("left", "30px")
+            .style("top", "30px")
+            .style("width", "700px")
+            .style("background", "orange")
+            .style("position", "absolute");
+        })
+      .on("mouseout", function(d) {
+          popup.transition().duration(200).style("opacity", 0);
+        });
+    
     var axis = d3.svg.axis()
       .scale(xscale)
       .orient("top")
