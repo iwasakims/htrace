@@ -16,9 +16,21 @@
  */
 package org.apache.htrace.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import org.apache.htrace.HTraceConfiguration;
+import org.apache.htrace.Sampler;
+import org.apache.htrace.Span;
+import org.apache.htrace.SpanReceiver;
+import org.apache.htrace.SpanReceiverBuilder;
+import org.apache.htrace.Trace;
+import org.apache.htrace.TraceScope;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 
 public class TestLocalFileSpanReceiver {
   @Test
@@ -35,5 +47,26 @@ public class TestLocalFileSpanReceiver {
       // ${java.io.tmpdir}/[random UUID]
       assertFalse(eq);
     }
+  }
+
+  @Test
+  public void testWriteToLocalFile() throws IOException {
+    String traceFileName = LocalFileSpanReceiver.getUniqueLocalTraceFileName();
+    HashMap<String, String> confMap = new HashMap<String, String>();
+    confMap.put(LocalFileSpanReceiver.PATH_KEY, traceFileName);
+    confMap.put(SpanReceiverBuilder.SPAN_RECEIVER_CONF_KEY,
+                LocalFileSpanReceiver.class.getName());
+    SpanReceiver rcvr =
+        new SpanReceiverBuilder(HTraceConfiguration.fromMap(confMap))
+            .logErrors(false).build();
+    Trace.addReceiver(rcvr);
+    TraceScope ts = Trace.startSpan("testWriteToLocalFile", Sampler.ALWAYS);
+    ts.close();
+    Trace.removeReceiver(rcvr);
+    rcvr.close();
+    
+    ObjectMapper mapper = new ObjectMapper();
+    MilliSpan span = mapper.readValue(new File(traceFileName), MilliSpan.class);
+    assertEquals("testWriteToLocalFile", span.getDescription());
   }
 }
