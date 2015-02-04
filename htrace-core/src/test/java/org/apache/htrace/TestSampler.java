@@ -53,10 +53,10 @@ public class TestSampler {
   @Test
   public void testParamterizedSampler() {
     TestParamSampler sampler = new TestParamSampler();
-    TraceScope s = Trace.startSpan("test", sampler, 1);
+    TraceScope s = Trace.startSpan("testParamterizedSampler", sampler, 1);
     Assert.assertNotNull(s.getSpan());
     s.close();
-    s = Trace.startSpan("test", sampler, -1);
+    s = Trace.startSpan("shouldNotBeStarted", sampler, -1);
     Assert.assertNull(s.getSpan());
     s.close();
   }
