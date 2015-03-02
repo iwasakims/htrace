@@ -28,6 +28,16 @@ public final class NullScope extends TraceScope {
   }
 
   @Override
+  public Span detach() {
+    return null;
+  }
+
+  @Override
+  public void close() {
+    return;
+  }
+
+  @Override
   public String toString() {
     return "NullScope";
   }

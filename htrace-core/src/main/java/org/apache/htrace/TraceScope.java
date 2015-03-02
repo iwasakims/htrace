@@ -53,9 +53,6 @@ public class TraceScope implements Closeable {
    * @return the same Span object
    */
   public Span detach() {
-    if (span == null) {
-      return null;
-    }
     if (detached) {
       Tracer.clientError("Tried to detach trace span " + span + " but " +
           "it has already been detached.");
@@ -84,7 +81,7 @@ public class TraceScope implements Closeable {
 
   @Override
   public void close() {
-    if ((span == null) || detached) {
+    if (detached) {
       return;
     }
     detached = true;
