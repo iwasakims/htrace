@@ -29,7 +29,8 @@ var Router = Backbone.Marionette.AppRouter.extend({
   "routes": {
     "": "init",
     "!/search(/:query)": "search",
-    "!/spans/:id": "span"
+    "!/spans/:id": "span",
+    "!/swimlane/:id": "swimlane"
   },
 
   "initialize": function() {
@@ -83,6 +84,15 @@ var Router = Backbone.Marionette.AppRouter.extend({
       "model": this.spansCollection.findWhere({
         "spanId": id
       })
+    }));
+  },
+
+  "swimlane": function(id) {
+    var top = new app.SwimlaneView();
+    app.root.app.show(top);
+    console.log(top.swimlane);
+    top.swimlane.show(new app.SwimlaneGraphView({
+      "spanId": id
     }));
   }
 });
