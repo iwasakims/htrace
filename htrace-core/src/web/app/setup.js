@@ -90,7 +90,6 @@ var Router = Backbone.Marionette.AppRouter.extend({
   "swimlane": function(id) {
     var top = new app.SwimlaneView();
     app.root.app.show(top);
-    console.log(top.swimlane);
     top.swimlane.show(new app.SwimlaneGraphView({
       "spanId": id
     }));

@@ -27,26 +27,68 @@ app.SwimlaneView = Backbone.Marionette.LayoutView.extend({
 app.SwimlaneGraphView = Backbone.Marionette.View.extend({
   className: "swimlane",
 
-  onShow: function() {
-    console.log(this)
-    const limit = 100;
+  initialize: function() {
+    const lim = 100;
     const height_span = 20;
     const width_span = 700;
     const size_tl = 6;
     const margin = {top: 50, bottom: 50, left: 50, right: 1000, process: 250};
-    this.addLane(this.options.spanId, limit);
-  },
 
-  addLane: function addLane(spanId, limit) {
-    console.log(spanId);
-    d3.json("/span/" + spanId, function(span) {
-      console.log(span);
+    var svg = d3.select(document.body)
+      .append("svg")
+      .append("g")
+      .attr("class", "svg")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    const rootId = "0000000000000000"
+
+    d3.json("/span/" + this.options.spanId, function(span) {
+      parent = svg.selectAll()
+        .data([span])
+        .enter()
+        .append("g")
+        .attr("class", toClassName(rootId));
+      addChildren(parent);
+      console.log(svg.selectAll("." + toClassName(rootId)));
     });
-    d3.json("/span/" + spanId + "/children?lim=" + limit, function(children) {
-      console.log(children);
-      children.forEach(function(childId) {
-        addLane(childId, limit);
-      })
-    });
-  }
+
+    console.log(svg.selectAll("g." + toClassName(rootId)));
+    
+    function addChildren(parent) {
+      var parentId = parent.datum().s
+      d3.json("/span/" + parentId + "/children?lim=" + lim, function(children) {
+        children.forEach(function(childId) {
+          d3.json("/span/" + childId, function(span) {
+            child = parent.selectAll()
+              .data([span])
+              .enter()
+              .append("g")
+              .attr("class", toClassName(parentId));
+            addChildren(child);
+          });
+        });
+      });
+    }
+
+    function toClassName(spanId) {
+      return "P" + spanId;
+    }
+
+    function getSpans(sel, spanId, lim, parentId) {
+      d3.json("/span/" + parentId, function(span) {
+        sel.append("g").attr("class", "desc")
+          .selectAll()
+          .data([span])
+          .enter()
+          .append("g")
+          .attr("class", "lane " + parentId);
+      });
+      console.log(sel.selectAll(".desc"))
+      d3.json("/span/" + spanId + "/children?lim=" + lim, function(children) {
+        children.forEach(function(childId) {
+          getSpans(svg, childId, lim, spanId);
+        });
+      });
+    }
+  },
 });
