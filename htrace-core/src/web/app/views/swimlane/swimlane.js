@@ -29,45 +29,45 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
 
   initialize: function() {
     const lim = 100;
-    this.spans = this.getSpans([], this.options.spanId, lim);
-    console.log(this.spans);
+    this.spans = this.getSpans(0, [], this.options.spanId, lim, this.getJsonSync);
   },
   
   render: function() {
     this.drawSVG(this.spans);
   },
 
-  getSpans: function getSpans(spans, spanId, lim) {
-    span = getJsonSync("/span/" + spanId);
+  getSpans: function getSpans(depth, spans, spanId, lim, getJSON) {
+    span = getJSON("/span/" + spanId);
+    span.depth = depth;
     spans.push(span);
-    childIds = getJsonSync("/span/" + span.s + "/children?lim=" + lim);
+    childIds = getJSON("/span/" + span.s + "/children?lim=" + lim);
     children = [];
     childIds.forEach(function(childId) {
-      children.push(getJsonSync("/span/" + childId));
+      children.push(getJSON("/span/" + childId));
     });
     children.sort(function(x, y) {
       return x.b < y.b ? -1 : x.b > y.b ? 1 : 0;
     });
     children.forEach(function(child) {
-      spans = getSpans(spans, child.s, lim);
+      spans = getSpans(depth + 1, spans, child.s, lim, getJSON);
     });
     return spans;
+  },
 
-    function getJsonSync(url) {
-      return $.ajax({
-        type: "GET",
-        url: url,
-        async: false,
-        dataType: "json"
-      }).responseJSON;
-    }
+  getJsonSync: function getJsonSync(url) {
+    return $.ajax({
+      type: "GET",
+      url: url,
+      async: false,
+      dataType: "json"
+    }).responseJSON;
   },
 
   drawSVG: function drawSVG(spans) {
     const height_span = 20;
     const width_span = 700;
     const size_tl = 6;
-    const margin = {top: 50, bottom: 50, left: 50, right: 1000, process: 250};
+    const margin = {top: 50, bottom: 50, left: 50, right: 1000, process: 500};
 
     var height_screen = spans.length * height_span;
     var tmin = d3.min(spans, function(s) { return s.b; });
@@ -97,7 +97,7 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
       .classed("timeline", function(d) { return d.t; });
 
     span_g.append("text")
-      .text(function(s) { return s.process_id; })
+      .text(function(s) { return s.r; })
       .style("alignment-baseline", "hanging")
       .attr("transform", function(s) {
         return "translate(" + (s.depth * 10 - margin.process) + ", 0)";
@@ -153,8 +153,8 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
         });
         text += "</table>"
         popup.html(text)
-          .style("left", (document.body.scrollLeft + 30) + "px")
-          .style("top", (document.body.scrollTop + 30) + "px")
+          .style("left", (document.body.scrollLeft + 50) + "px")
+          .style("top", (document.body.scrollTop + 70) + "px")
           .style("width", "700px")
           .style("background", "orange")
           .style("position", "absolute");
