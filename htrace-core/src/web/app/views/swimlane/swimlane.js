@@ -76,7 +76,7 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
     var xscale = d3.time.scale()
       .domain([new Date(tmin), new Date(tmax)]).range([0, width_span]);
 
-    var svg = d3.select("body").append("svg")
+    var svg = d3.select("div[role='main']").append("svg")
       .attr("width", width_span + margin.process + margin.left + margin.right)
       .attr("height", height_screen + margin.top + margin.bottom)
       .append("g")
@@ -142,7 +142,7 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
       })
       .classed("timeline");
 
-    var popup = d3.select("body").append("div")
+    var popup = d3.select("div[role='main']").append("div")
       .attr("class", "popup")
       .style("opacity", 0);
 
