@@ -28,21 +28,21 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
   className: "swimlane",
 
   initialize: function() {
-    const lim = 100;
-    this.spans = this.getSpans(0, [], this.options.spanId, lim, this.getJsonSync);
+    this.spans = this.getSpans(0, [], this.options.spanId,
+                               this.options.lim || "lim=100",
+                               this.getJsonSync);
   },
   
   render: function() {
-    this.drawSVG(this.spans);
+    this.appendSVG(this.spans);
   },
 
   getSpans: function getSpans(depth, spans, spanId, lim, getJSON) {
-    span = getJSON("/span/" + spanId);
+    var span = getJSON("/span/" + spanId);
     span.depth = depth;
     spans.push(span);
-    childIds = getJSON("/span/" + span.s + "/children?lim=" + lim);
-    children = [];
-    childIds.forEach(function(childId) {
+    var children = [];
+    getJSON("/span/" + span.s + "/children?" + lim).forEach(function(childId) {
       children.push(getJSON("/span/" + childId));
     });
     children.sort(function(x, y) {
@@ -63,13 +63,14 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
     }).responseJSON;
   },
 
-  drawSVG: function drawSVG(spans) {
+  appendSVG: function appendSVG(spans) {
     const height_span = 20;
     const width_span = 700;
     const size_tl = 6;
-    const margin = {top: 50, bottom: 50, left: 50, right: 1000, process: 500};
+    const margin = {top: 50, bottom: 50, left: 20, right: 1000, process: 300};
 
     var height_screen = spans.length * height_span;
+    var dmax = d3.max(spans, function(s) { return s.depth; });
     var tmin = d3.min(spans, function(s) { return s.b; });
     var tmax = d3.max(spans, function(s) { return s.e; });
     var xscale = d3.time.scale()
@@ -85,7 +86,7 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
       .attr("id", "bars")
       .attr("width", width_span)
       .attr("height", height_screen)
-      .attr("transform", "translate(" + margin.process + ", 0)");
+      .attr("transform", "translate(" + (10 * dmax + margin.process) + ", 0)");
     
     var span_g = bars.selectAll("g.span")
       .data(spans)
@@ -99,8 +100,9 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
     span_g.append("text")
       .text(function(s) { return s.r; })
       .style("alignment-baseline", "hanging")
+      .style("font-size", "14px")
       .attr("transform", function(s) {
-        return "translate(" + (s.depth * 10 - margin.process) + ", 0)";
+        return "translate(" + (s.depth * 10 - margin.process - 10 * dmax) + ", 0)";
       });
 
     var rect_g = span_g.append("g")
@@ -118,7 +120,8 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
 
     rect_g.append("text")
       .text(function(s){ return s.d; })
-      .style("alignment-baseline", "hanging");
+      .style("alignment-baseline", "hanging")
+      .style("font-size", "14px");
 
     rect_g.append("text")
       .text(function(s){ return s.e - s.b; })
