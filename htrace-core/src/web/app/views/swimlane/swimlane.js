@@ -28,7 +28,8 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
   className: "swimlane",
 
   initialize: function() {
-    this.spans = this.getSpans(0, [], this.options.spanId,
+    this.spans = this.getSpans(0, [], 
+                               this.getJsonSync("/span/" + this.options.spanId),
                                this.options.lim || "lim=100",
                                this.getJsonSync);
   },
@@ -37,8 +38,7 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
     this.appendSVG(this.spans);
   },
 
-  getSpans: function getSpans(depth, spans, spanId, lim, getJSON) {
-    var span = getJSON("/span/" + spanId);
+  getSpans: function getSpans(depth, spans, span, lim, getJSON) {
     span.depth = depth;
     spans.push(span);
     var children = [];
@@ -49,7 +49,7 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
       return x.b < y.b ? -1 : x.b > y.b ? 1 : 0;
     });
     children.forEach(function(child) {
-      spans = getSpans(depth + 1, spans, child.s, lim, getJSON);
+      spans = getSpans(depth + 1, spans, child, lim, getJSON);
     });
     return spans;
   },
