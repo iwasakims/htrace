@@ -165,7 +165,7 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
         var text = "<table>";
         d.t.forEach(function (t) {
           text += "<tr><td>" + (t.t - tmin) + "</td>";
-          text += "<td> : " + t.m + "<td/></tr>";
+          text += "<td> : " + t.m + "</td></tr>";
         });
         text += "</table>"
         popup.html(text)
