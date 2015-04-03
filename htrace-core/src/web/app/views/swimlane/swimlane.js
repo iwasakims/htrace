@@ -37,10 +37,6 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
     this.appendSVG(this.spans);
   },
 
-  onBeforeDestroy: function() {
-    d3.select("#svg-swimlane").remove();
-  },
-
   getSpans: function getSpans(depth, spans, span, lim, getJSON) {
     span.depth = depth;
     spans.push(span);
