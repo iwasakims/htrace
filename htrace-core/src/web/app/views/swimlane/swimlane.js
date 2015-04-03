@@ -148,12 +148,12 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
       .enter()
       .append("rect")
       .style("fill", "red")
+      .attr("class", "timeline")
       .attr("height", size_tl)
       .attr("width", size_tl)
       .attr("transform", function(t) {
         return "translate(" + xscale(t.t) + "," + (height_span - 1 - size_tl) + ")";
-      })
-      .classed("timeline");
+      });
 
     var popup = d3.select("div[role='main']").append("div")
       .attr("class", "popup")
