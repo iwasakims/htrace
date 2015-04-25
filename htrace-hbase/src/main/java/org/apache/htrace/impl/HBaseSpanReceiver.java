@@ -160,6 +160,9 @@ public class HBaseSpanReceiver implements SpanReceiver {
   private class WriteSpanRunnable implements Runnable {
     private Connection hconnection;
     private Table htable;
+    private SpanProtos.Span.Builder sbuilder = SpanProtos.Span.newBuilder();
+    private SpanProtos.TimelineAnnotation.Builder tlbuilder =
+        SpanProtos.TimelineAnnotation.newBuilder();
 
     public WriteSpanRunnable() {
     }
@@ -169,10 +172,8 @@ public class HBaseSpanReceiver implements SpanReceiver {
      */
     @Override
     public void run() {
-      SpanProtos.Span.Builder sbuilder = SpanProtos.Span.newBuilder();
-      SpanProtos.TimelineAnnotation.Builder tlbuilder =
-          SpanProtos.TimelineAnnotation.newBuilder();
       List<Span> dequeuedSpans = new ArrayList<Span>(maxSpanBatchSize);
+      List<Put> puts = new ArrayList<Put>(maxSpanBatchSize);
       long errorCount = 0;
 
       while (running.get() || queue.size() > 0) {
@@ -191,62 +192,15 @@ public class HBaseSpanReceiver implements SpanReceiver {
             // Try and get up to 100 queues
             queue.drainTo(dequeuedSpans, maxSpanBatchSize - 1);
           }
+          for (Span span : dequeuedSpans) {
+            puts.add(createPut(span));
+          }
         } catch (InterruptedException ie) {
           // Ignored.
         }
         startClient();
-        if (dequeuedSpans.isEmpty()) {
-          try {
-            this.htable.flushCommits();
-          } catch (IOException e) {
-            LOG.error("failed to flush writes to HBase.");
-            closeClient();
-          }
-          continue;
-        }
-
         try {
-          for (Span span : dequeuedSpans) {
-            sbuilder.clear()
-                    .setTraceId(span.getTraceId())
-                    .setStart(span.getStartTimeMillis())
-                    .setStop(span.getStopTimeMillis())
-                    .setSpanId(span.getSpanId())
-                    .setProcessId(span.getProcessId())
-                    .setDescription(span.getDescription());
-
-            if (span.getParents().length == 0) {
-              sbuilder.setParentId(0);
-            } else if (span.getParents().length > 0) {
-              sbuilder.setParentId(span.getParents()[0]);
-              if (span.getParents().length > 1) {
-                LOG.error("error: HBaseSpanReceiver does not support spans " +
-                    "with multiple parents.  Ignoring multiple parents for " +
-                    span);
-              }
-            }
-            for (TimelineAnnotation ta : span.getTimelineAnnotations()) {
-              sbuilder.addTimeline(tlbuilder.clear()
-                                            .setTime(ta.getTime())
-                                            .setMessage(ta.getMessage())
-                                            .build());
-            }
-            Put put = new Put(Bytes.toBytes(span.getTraceId()));
-            put.add(HBaseSpanReceiver.this.cf,
-                    sbuilder.build().toByteArray(),
-                    null);
-            if (span.getParents().length == 0) {
-              put.add(HBaseSpanReceiver.this.icf,
-                      INDEX_TIME_QUAL,
-                      Bytes.toBytes(span.getStartTimeMillis()));
-              put.add(HBaseSpanReceiver.this.icf,
-                      INDEX_SPAN_QUAL,
-                      sbuilder.build().toByteArray());
-            }
-            this.htable.put(put);
-          }
-          // clear the list for the next time through.
-          dequeuedSpans.clear();
+          this.htable.put(puts);
           // reset the error counter.
           errorCount = 0;
         } catch (Exception e) {
@@ -268,6 +222,10 @@ public class HBaseSpanReceiver implements SpanReceiver {
           } catch (InterruptedException e1) {
             // Ignored
           }
+        } finally {
+          // clear the list for the next time through.
+          dequeuedSpans.clear();
+          puts.clear();
         }
       }
       closeClient();
@@ -304,6 +262,45 @@ public class HBaseSpanReceiver implements SpanReceiver {
           LOG.warn("Failed to create HBase connection. " + e.getMessage());
         }
       }
+    }
+
+    private Put createPut(Span span) {
+      sbuilder.clear()
+          .setTraceId(span.getTraceId())
+          .setStart(span.getStartTimeMillis())
+          .setStop(span.getStopTimeMillis())
+          .setSpanId(span.getSpanId())
+          .setProcessId(span.getProcessId())
+          .setDescription(span.getDescription());
+      if (span.getParents().length == 0) {
+        sbuilder.setParentId(0);
+      } else if (span.getParents().length > 0) {
+        sbuilder.setParentId(span.getParents()[0]);
+        if (span.getParents().length > 1) {
+          LOG.error("error: HBaseSpanReceiver does not support spans " +
+                    "with multiple parents.  Ignoring multiple parents for " +
+                    span);
+        }
+      }
+      for (TimelineAnnotation ta : span.getTimelineAnnotations()) {
+        sbuilder.addTimeline(tlbuilder.clear()
+                             .setTime(ta.getTime())
+                             .setMessage(ta.getMessage())
+                             .build());
+      }
+      Put put = new Put(Bytes.toBytes(span.getTraceId()));
+      put.add(HBaseSpanReceiver.this.cf,
+              sbuilder.build().toByteArray(),
+              null);
+      if (span.getParents().length == 0) {
+        put.add(HBaseSpanReceiver.this.icf,
+                INDEX_TIME_QUAL,
+                Bytes.toBytes(span.getStartTimeMillis()));
+        put.add(HBaseSpanReceiver.this.icf,
+                INDEX_SPAN_QUAL,
+                sbuilder.build().toByteArray());
+      }
+      return put;
     }
   }
 

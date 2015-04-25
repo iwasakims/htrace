@@ -31,10 +31,9 @@ language governing permissions and limitations under the License. -->
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hbase.version>0.99.2</hbase.version>
-    <!-- <hbase.version>0.99.0-SNAPSHOT</hbase.version> -->
-    <hadoop.version>2.4.0</hadoop.version>
-    <!-- <hadoop.version>3.0.0-SNAPSHOT</hadoop.version> -->
+    <hbase.version>1.0.0</hbase.version>
+    <!-- hadoop.version is used for only hadoop-maven-plugins -->
+    <hadoop.version>2.5.1</hadoop.version>
     <protobuf.version>2.5.0</protobuf.version>
   </properties>
 
