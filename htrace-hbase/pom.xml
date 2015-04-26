@@ -32,7 +32,6 @@ language governing permissions and limitations under the License. -->
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <hbase.version>1.0.0</hbase.version>
-    <!-- hadoop.version is used for only hadoop-maven-plugins -->
     <hadoop.version>2.5.1</hadoop.version>
     <protobuf.version>2.5.0</protobuf.version>
   </properties>
@@ -152,6 +151,17 @@ language governing permissions and limitations under the License. -->
       <artifactId>hbase-testing-util</artifactId>
       <version>${hbase.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.htrace</groupId>
+          <artifactId>htrace-core</artifactId>
+        </exclusion>
+      </exclusions> 
     </dependency>
   </dependencies>
 
