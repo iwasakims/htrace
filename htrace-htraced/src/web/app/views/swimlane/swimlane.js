@@ -117,7 +117,8 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
     var rect_g = span_g.append("g")
       .attr("transform", function(s) {
         return "translate(" + xscale(new Date(s.b)) + ", 0)";
-      });
+      })
+      .classed({"annotation": function(d) { return d.t || d.n; }});
 
     rect_g.append("rect")
       .attr("height", height_span - 1)
@@ -125,7 +126,10 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
         return (width_span * (s.e - s.b)) / (tmax - tmin) + 1;
       })
       .style("fill", "lightblue")
-      .attr("class", "span")
+      .classed({"span": true,
+                "annotation": function(d) { return d.t || d.n; }});
+
+    bars.selectAll("rect.span.annotation").style("fill", "turquoise");
 
     rect_g.append("text")
       .text(function(s){ return s.d; })
@@ -155,20 +159,28 @@ app.SwimlaneGraphView = Backbone.Marionette.View.extend({
       .attr("class", "popup")
       .style("opacity", 0);
 
-    bars.selectAll("g.timeline")
+    bars.selectAll("g.annotation")
       .on("mouseover", function(d) {
         popup.transition().duration(300).style("opacity", .95);
         var text = "<table>";
-        d.t.forEach(function (t) {
-          text += "<tr><td>" + (t.t - tmin) + "</td>";
-          text += "<td> : " + t.m + "</td></tr>";
-        });
+        if (d.n) {
+          for (var k in d.n) {
+            text += "<tr><td> " + k + "</td>";
+            text += "<td> : " + d.n[k] + "</td></tr>";
+          };
+        }
+        if (d.t) {
+          d.t.forEach(function (t) {
+            text += "<tr><td> " + (t.t - tmin) + "</td>";
+            text += "<td> : " + t.m + "</td></tr>";
+          });
+        }
         text += "</table>"
         popup.html(text)
           .style("left", (document.body.scrollLeft + 50) + "px")
           .style("top", (document.body.scrollTop + 70) + "px")
           .style("width", "700px")
-          .style("background", "orange")
+          .style("background", "lemonchiffon")
           .style("position", "absolute");
       })
       .on("mouseout", function(d) {
