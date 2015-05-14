@@ -27,4 +27,4 @@ libleveldb.so to your system library path.
 
 Testing
 =======
-You can run the unit tests by running "./gobuild.sh test"
+You can run the unit tests by running "src/go/gobuild.sh test"
