@@ -182,6 +182,17 @@ htrace.SpanWidget = function(params) {
 //          ", begin=" + this.span.get('begin') + ", end=" + this.span.get('end'));
       this.ctx.fillRect(beginX, this.y0 + gapY, endX - beginX,
           this.ySize - (gapY * 2));
+
+      // Draw a dots showing time points where annotations are.
+      var annotations = this.span.get('timeAnnotations');
+      var annotationY = this.y0 + gapY;
+      var annotationW = 4;
+      var annotationH = (this.ySize - (gapY * 2)) / 2;
+      this.ctx.fillStyle="#008000";
+      for (var i = 0; i < annotations.length; i++) {
+        this.ctx.fillRect(this.timeToPosition(annotations[i].t), annotationY,
+            annotationW, annotationH);
+      }
     }
 
     // Draw description text
