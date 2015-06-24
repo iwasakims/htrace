@@ -19,7 +19,7 @@
 
 var htrace = htrace || {};
 
-htrace.fillSpanDetailsView = function(span) {
+htrace.showSpanDetails = function(span) {
   var info = {
     spanID: span.get("spanID"),
     begin: htrace.dateToString(span.get("begin"), 10),
@@ -33,7 +33,6 @@ htrace.fillSpanDetailsView = function(span) {
     duration: 4
   };
   keys = ["duration"];
-  annotations = [];
   for(k in span.attributes) {
     if (k == "reifiedChildren") {
       continue;
@@ -48,8 +47,10 @@ htrace.fillSpanDetailsView = function(span) {
       // For timeline annotations, make the times into top-level keys.
       var timeAnnotations = span.get("timeAnnotations");
       for (var i = 0; i < timeAnnotations.length; i++) {
-        annotations.push(
-            [htrace.dateToString(timeAnnotations[i].t), timeAnnotations[i].m]);
+        var key = htrace.dateToString(timeAnnotations[i].t);
+        keys.push(key);
+        info[key] = timeAnnotations[i].m;
+        explicitOrder[key] = 200;
       }
       continue;
     }
@@ -59,7 +60,10 @@ htrace.fillSpanDetailsView = function(span) {
       // user-defined.
       var infoAnnotations = span.get("infoAnnotations");
       _.each(infoAnnotations, function(value, key) {
-        annotations.push(["[" + key + "]", value]);
+        key = "[" + key + "]";
+        keys.push(key);
+        info[key] = value;
+        explicitOrder[key] = 200;
       });
       continue;
     }
@@ -94,34 +98,8 @@ htrace.fillSpanDetailsView = function(span) {
         {bgcolor: colorString, key: keys[i], val: info[keys[i]]});
   }
   h += '</table>';
-  $("#spanDetails").html(h);
-
-  // pop up table showing annotation on clicking "Annotations" button
-  $("#annotationsButton").off("click");
-  if (annotations.length > 0) {
-    $("#annotationsButton").on("click", function() {
-      var t = '<table style="table-layout:fixed;width:100%;word-wrap:break-word">';
-      var timeAnnotations = span.get("timeAnnotations");
-      for (var i = 0; i < annotations.length; i++) {
-        var bgcolor = ((i%2) == 1) ? "#f1f1f1" : "#ffffff";
-        t += _.template($("#table-row-template").html())(
-            {bgcolor: bgcolor,
-             key: annotations[i][0],
-             val: annotations[i][1]});
-      }
-      t += '</table>';
-      htrace.showModal(_.template($("#modal-table-template").html())(
-          {title: "Annotations", body: t}));
-    });
-    $("#annotationsButton").css("visibility", "visible");
-  } else {
-    $("#annotationsButton").css("visibility", "hidden");
-  }
-};
-
-htrace.clearSpanDetailsView = function() {
-  $("#spanDetails").html("");
-  $("#annotationsButton").css("visibility", "hidden");
+  htrace.showModal(_.template($("#modal-table-template").html())(
+      {title: "Span Details", body: h}));
 };
 
 // Widget containing the trace span displayed on the canvas.
@@ -244,25 +222,6 @@ htrace.SpanWidget = function(params) {
           } else {
             this.span.set("selected", true);
           }
-          var selection = null;
-          var multipleSelections = false;
-          this.manager.searchResultsView.applyToAllSpans(function(span) {
-              if (span.get("selected")) {
-                if (selection == null) {
-                  selection = span;
-                } else {
-                  multipleSelections = true;
-                }
-              }
-            });
-          if (multipleSelections) {
-            selection = null;
-          }
-          if (selection == null) {
-            htrace.clearSpanDetailsView();
-          } else {
-            htrace.fillSpanDetailsView(selection);
-          }
         } else {
           this.manager.searchResultsView.applyToAllSpans(function(span) {
               if (span.get("selected")) {
@@ -270,12 +229,17 @@ htrace.SpanWidget = function(params) {
               }
             });
           this.span.set("selected", true);
-          htrace.fillSpanDetailsView(this.span);
         }
         return true;
       case "draw":
         this.draw();
         return true;
+      case "dblclick":
+        if (!htrace.inBoundingBox(e.x, e.y,
+            this.x0, this.xF, this.y0, this.yF)) {
+          return true;
+        }
+        htrace.showSpanDetails(this.span);
     }
   };
 
@@ -331,5 +295,6 @@ htrace.SpanWidget = function(params) {
     });
   }
   this.manager.register("mouseDown", this);
+  this.manager.register("dblclick", this);
   return this;
 };

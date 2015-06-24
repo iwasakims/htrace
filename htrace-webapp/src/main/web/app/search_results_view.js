@@ -96,6 +96,17 @@ htrace.SearchResultsView = Backbone.View.extend({
     this.draw();
   },
 
+  handleDblclick: function(e) {
+    e.preventDefault();
+    this.widgetManager.handle({
+      type: "dblclick",
+      x: this.getCanvasX(e),
+      y: this.getCanvasY(e),
+      raw: e
+    });
+    this.draw();
+  },
+
   render: function() {
     console.log("SearchResultsView#render.");
     $(this.el).html(_.template($("#search-results-view-template").html()));
@@ -258,6 +269,10 @@ htrace.SearchResultsView = Backbone.View.extend({
     $("#resultsCanvas").off("mousemove");
     $("#resultsCanvas").on("mousemove", function(e) {
       view.handleMouseMove(e);
+    });
+    $("#resultsCanvas").off("dblclick");
+    $("#resultsCanvas").on("dblclick", function(e) {
+      view.handleDblclick(e);
     });
     $("#resultsCanvas").off("contextmenu");
     $("#resultsCanvas").on("contextmenu", function(e) {
