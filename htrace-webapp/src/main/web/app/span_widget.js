@@ -113,11 +113,15 @@ htrace.fillSpanDetailsView = function(span) {
       htrace.showModal(_.template($("#modal-table-template").html())(
           {title: "Annotations", body: t}));
     });
+    $("#annotationsButton").css("visibility", "visible");
+  } else {
+    $("#annotationsButton").css("visibility", "hidden");
   }
 };
 
 htrace.clearSpanDetailsView = function() {
   $("#spanDetails").html("");
+  $("#annotationsButton").css("visibility", "hidden");
 };
 
 // Widget containing the trace span displayed on the canvas.
