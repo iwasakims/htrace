@@ -33,6 +33,7 @@ htrace.fillSpanDetailsView = function(span) {
     duration: 4
   };
   keys = ["duration"];
+  annotations = [];
   for(k in span.attributes) {
     if (k == "reifiedChildren") {
       continue;
@@ -47,10 +48,8 @@ htrace.fillSpanDetailsView = function(span) {
       // For timeline annotations, make the times into top-level keys.
       var timeAnnotations = span.get("timeAnnotations");
       for (var i = 0; i < timeAnnotations.length; i++) {
-        var key = htrace.dateToString(timeAnnotations[i].t);
-        keys.push(key);
-        info[key] = timeAnnotations[i].m;
-        explicitOrder[key] = 200;
+        annotations.push(
+            [htrace.dateToString(timeAnnotations[i].t), timeAnnotations[i].m]);
       }
       continue;
     }
@@ -60,10 +59,7 @@ htrace.fillSpanDetailsView = function(span) {
       // user-defined.
       var infoAnnotations = span.get("infoAnnotations");
       _.each(infoAnnotations, function(value, key) {
-        key = "[" + key + "]";
-        keys.push(key);
-        info[key] = value;
-        explicitOrder[key] = 200;
+        annotations.push(["[" + key + "]", value]);
       });
       continue;
     }
@@ -94,13 +90,30 @@ htrace.fillSpanDetailsView = function(span) {
   for (i = 0; i < len; i++) {
     // Make every other row grey to improve visibility.
     var colorString = ((i%2) == 1) ? "#f1f1f1" : "#ffffff";
-    h += _.template('<tr bgcolor="' + colorString + '">' +
-          '<td style="width:30%;word-wrap:break-word"><%- key %></td>' +
-          '<td style="width:70%;word-wrap:break-word"><%- val %></td>' +
-        "</tr>")({key: keys[i], val: info[keys[i]]});
+    h += _.template($("#table-row-template").html())(
+        {bgcolor: colorString, key: keys[i], val: info[keys[i]]});
   }
   h += '</table>';
   $("#spanDetails").html(h);
+
+  // pop up table showing annotation on clicking "Annotations" button
+  $("#annotationsButton").off("click");
+  if (annotations.length > 0) {
+    $("#annotationsButton").on("click", function() {
+      var t = '<table style="table-layout:fixed;width:100%;word-wrap:break-word">';
+      var timeAnnotations = span.get("timeAnnotations");
+      for (var i = 0; i < annotations.length; i++) {
+        var bgcolor = ((i%2) == 1) ? "#f1f1f1" : "#ffffff";
+        t += _.template($("#table-row-template").html())(
+            {bgcolor: bgcolor,
+             key: annotations[i][0],
+             val: annotations[i][1]});
+      }
+      t += '</table>';
+      htrace.showModal(_.template($("#modal-table-template").html())(
+          {title: "Annotations", body: t}));
+    });
+  }
 };
 
 htrace.clearSpanDetailsView = function() {
@@ -188,7 +201,7 @@ htrace.SpanWidget = function(params) {
       var annotationY = this.y0 + gapY;
       var annotationW = 4;
       var annotationH = (this.ySize - (gapY * 2)) / 2;
-      this.ctx.fillStyle="#008000";
+      this.ctx.fillStyle="#419641";
       for (var i = 0; i < annotations.length; i++) {
         this.ctx.fillRect(this.timeToPosition(annotations[i].t), annotationY,
             annotationW, annotationH);
