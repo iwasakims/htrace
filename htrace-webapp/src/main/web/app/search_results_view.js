@@ -27,14 +27,12 @@ htrace.SearchResultsView = Backbone.View.extend({
 
   end: this.MINIMUM_TIME_SPAN,
 
+  processNameFraction: 0.2,
+
   initialize: function(options) {
     this.searchResults = options.searchResults;
     this.el = options.el;
     var view = this;
-    this.listenTo(this.searchResults, 'add remove change reset',
-      _.debounce(function()  {
-      view.render();
-    }, 10));
 
     // Re-render the canvas when the window size changes.
     // Add a debouncer delay to avoid spamming render requests.
@@ -109,6 +107,7 @@ htrace.SearchResultsView = Backbone.View.extend({
 
   render: function() {
     console.log("SearchResultsView#render.");
+    console.trace();
     $(this.el).html(_.template($("#search-results-view-template").html()));
     $('#selectedTime').attr('readonly', 'readonly');
     this.canvas = $("#resultsCanvas");
@@ -168,7 +167,7 @@ htrace.SearchResultsView = Backbone.View.extend({
   setupCoordinates: function() {
     this.viewX = this.canvas.parent().innerWidth();
     this.viewY = $(window).innerHeight() - $("#header").innerHeight() - 50;
-    this.xB = Math.min(300, Math.floor(this.viewX / 5));
+    this.xB = Math.floor(this.viewX * this.processNameFraction);
     this.xD = this.xB + Math.min(75, Math.floor(this.viewX / 20));
     var scrollBarWidth = Math.min(50, Math.floor(this.viewX / 10));
     this.xS = this.viewX - scrollBarWidth;
@@ -176,7 +175,10 @@ htrace.SearchResultsView = Backbone.View.extend({
   },
 
   setupWidgets: function() {
+    var searchResultsView = this;
     this.widgetManager = new htrace.WidgetManager({searchResultsView: this});
+
+    var partitionWidgetWidth = Math.max(5, Math.floor(this.viewX / 300));
 
     // Create a SpanWidget for each span we know about
     var spanWidgetHeight = Math.min(25, Math.floor(this.viewY / 32));
@@ -188,7 +190,7 @@ htrace.SearchResultsView = Backbone.View.extend({
         ctx: this.ctx,
         span: this.searchResults.at(i),
         x0: 0,
-        xB: this.xB,
+        xB: this.xB + partitionWidgetWidth,
         xD: this.xD,
         xF: this.xS,
         y0: groupY,
@@ -201,6 +203,26 @@ htrace.SearchResultsView = Backbone.View.extend({
     if (this.canvasY < groupY) {
       this.canvasY = groupY;
     }
+
+    // Create the draggable horizontal parition between process names and span
+    // names.
+    new htrace.PartitionWidget({
+      el: '#resultsCanvas',
+      manager: this.widgetManager,
+      ctx: this.ctx,
+      x0: this.xB,
+      xF: this.xB + partitionWidgetWidth,
+      xMin: Math.floor(this.viewX * 0.10),
+      xMax: Math.floor(this.viewX * 0.90),
+      y0: 0, 
+      yF: groupY,
+      releaseHandler: function(x) {
+        searchResultsView.processNameFraction = (x / searchResultsView.viewX);
+        console.log("htrace#PartitionWidget setting processNameFraction to " +
+              searchResultsView.processNameFraction);
+        searchResultsView.render();
+      }
+    });
 
     // Create the time cursor widget.
     var selectedTime = this.begin;
@@ -219,6 +241,7 @@ htrace.SearchResultsView = Backbone.View.extend({
     this.timeCursor.yF = this.canvasY;
     this.timeCursor.begin = this.begin;
     this.timeCursor.end = this.end;
+
   },
 
   draw: function() {
@@ -371,13 +394,13 @@ htrace.SearchResultsView = Backbone.View.extend({
         toDelete.push(model);
       }
     }
-    this.render();
     ids = [];
     for (var i = 0; i < toDelete.length; i++) {
       ids.push(toDelete[i].get("spanId"));
     }
     console.log("clearHandler: removing " + JSON.stringify(ids));
     this.searchResults.remove(toDelete);
+    this.render();
   },
 
   getSelectedSpansOrAllSpans: function() {
