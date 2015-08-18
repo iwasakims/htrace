@@ -195,15 +195,6 @@ public class HBaseSpanReceiver implements SpanReceiver {
           // Ignored.
         }
         startClient();
-        if (dequeuedSpans.isEmpty()) {
-          try {
-            this.htable.flushCommits();
-          } catch (IOException e) {
-            LOG.error("failed to flush writes to HBase.");
-            closeClient();
-          }
-          continue;
-        }
 
         try {
           for (Span span : dequeuedSpans) {
@@ -363,6 +354,7 @@ public class HBaseSpanReceiver implements SpanReceiver {
     long traceid = parent.getSpan().getSpanId().getHigh();
     TraceScope child1 = Trace.startSpan("HBaseSpanReceiver.main.child.1");
     Thread.sleep(10);
+    child1.close();
     TraceScope child2 = Trace.startSpan("HBaseSpanReceiver.main.child.2", parent.getSpan());
     Thread.sleep(10);
     TraceScope gchild = Trace.startSpan("HBaseSpanReceiver.main.grandchild");
@@ -373,7 +365,6 @@ public class HBaseSpanReceiver implements SpanReceiver {
     Thread.sleep(10);
     child2.close();
     Thread.sleep(10);
-    child1.close();
     parent.close();
     receiver.close();
     System.out.println("trace id: " + traceid);
