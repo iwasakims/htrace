@@ -195,6 +195,15 @@ public class HBaseSpanReceiver implements SpanReceiver {
           // Ignored.
         }
         startClient();
+        if (dequeuedSpans.isEmpty()) {
+          try {
+            this.htable.flushCommits();
+          } catch (IOException e) {
+            LOG.error("failed to flush writes to HBase.");
+            closeClient();
+          }
+          continue;
+        }
 
         try {
           for (Span span : dequeuedSpans) {

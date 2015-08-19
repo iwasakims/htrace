@@ -41,6 +41,11 @@ public class HBaseSpanViewerTracesServlet extends HttpServlet {
           return null;
         }
       };
+  private Configuration conf;
+
+  public HBaseSpanViewerTracesServlet(Configuration conf) {
+    this.conf = conf;
+  }
 
   @Override
   @SuppressWarnings("unchecked")
@@ -48,8 +53,6 @@ public class HBaseSpanViewerTracesServlet extends HttpServlet {
       throws ServletException, IOException {
     HBaseSpanViewer viewer = tlviewer.get();
     if (viewer == null) {
-      final Configuration conf = (Configuration) getServletContext()
-        .getAttribute(HBaseSpanViewerServer.HTRACE_CONF_ATTR);
       viewer = new HBaseSpanViewer(conf);
       tlviewer.set(viewer);
     }

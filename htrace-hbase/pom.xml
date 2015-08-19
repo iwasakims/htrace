@@ -31,7 +31,7 @@ language governing permissions and limitations under the License. -->
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hbase.version>1.1.1</hbase.version>
+    <hbase.version>0.99.2</hbase.version>
     <jetty.version>9.2.13.v20150730</jetty.version>
   </properties>
 
@@ -73,27 +73,6 @@ language governing permissions and limitations under the License. -->
             <configuration>
               <relocations>
                 <relocation>
-                  <pattern>org.apache.htrace</pattern>
-                  <shadedPattern>relocated.org.apache.htrace</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.apache.commons.logging</pattern>
-                  <shadedPattern>relocated.commons.logging</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>com.google.protobuf</pattern>
-                  <shadedPattern>relocated.com.google.protobuf</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.eclipse.jetty</pattern>
-                  <shadedPattern>relocated.org.eclipse.jetty</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>javax.servlet</pattern>
-                  <shadedPattern>relocated.javax.servlet</shadedPattern>
-                </relocation>
-                <!--
-                <relocation>
                   <pattern>org.apache.commons.logging</pattern>
                   <shadedPattern>org.apache.htrace.commons.logging</shadedPattern>
                 </relocation>
@@ -109,7 +88,6 @@ language governing permissions and limitations under the License. -->
                   <pattern>javax.servlet</pattern>
                   <shadedPattern>org.apache.htrace.javax.servlet</shadedPattern>
                 </relocation>
-                -->
               </relocations>
             </configuration>
             <goals>
@@ -162,11 +140,6 @@ language governing permissions and limitations under the License. -->
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
-      <version>${jetty.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-webapp</artifactId>
       <version>${jetty.version}</version>
     </dependency>
     <!-- Global deps. -->
