@@ -50,6 +50,7 @@ public class MilliSpan implements Span {
   private static final SpanId EMPTY_PARENT_ARRAY[] = new SpanId[0];
   private static final String EMPTY_STRING = "";
 
+  private Tracer tracer;
   private long begin;
   private long end;
   private final String description;
@@ -170,7 +171,6 @@ public class MilliSpan implements Span {
         throw new IllegalStateException("Span for " + description
             + " has not been started");
       end = System.currentTimeMillis();
-      Tracer.getInstance().deliver(this);
     }
   }
 

@@ -16,9 +16,8 @@
  */
 package org.apache.htrace.core;
 
-
 import java.io.Closeable;
-
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * The collector within a process that is the destination of Spans when a trace is running.
@@ -27,13 +26,28 @@ import java.io.Closeable;
  * <pre>
  * <code>public SpanReceiverImpl(HTraceConfiguration)</code>
  * </pre>
- * The helper class {@link org.apache.htrace.SpanReceiverBuilder} provides convenient factory
- * methods for creating {@code SpanReceiver} instances from configuration.
- * @see org.apache.htrace.SpanReceiverBuilder
  */
-public interface SpanReceiver extends Closeable {
+public abstract class SpanReceiver implements Closeable {
+  /**
+   * An ID which uniquely identifies this SpanReceiver.
+   */
+  private final long id;
+
+  private static final AtomicLong HIGHEST_SPAN_RECEIVER_ID = new AtomicLong(0);
+
+  /**
+   * Get an ID uniquely identifying this SpanReceiver.
+   */
+  public final long getId() {
+    return id;
+  }
+
+  protected SpanReceiver() {
+    this.id = HIGHEST_SPAN_RECEIVER_ID.incrementAndGet();
+  }
+
   /**
    * Called when a Span is stopped and can now be stored.
    */
-  public void receiveSpan(Span span);
+  public abstract void receiveSpan(Span span);
 }

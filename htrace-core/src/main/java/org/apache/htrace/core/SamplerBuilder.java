@@ -17,29 +17,51 @@
 package org.apache.htrace.core;
 
 import java.lang.reflect.Constructor;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * A {@link Sampler} builder. It reads a {@link Sampler} class name from the provided
- * configuration using the {@link #SAMPLER_CONF_KEY} key. Unqualified class names
- * are interpreted as members of the {@code org.apache.htrace.impl} package. The {@link #build()}
- * method constructs an instance of that class, initialized with the same configuration.
+ * A {@link Sampler} builder.  Unqualified class names are interpreted as
+ * members of the {@code org.apache.htrace.core} package. The {@link #build()}
+ * method constructs an instance of that class, initialized with the same
+ * configuration.
  */
 public class SamplerBuilder {
-
-  // TODO: should follow the same API as SpanReceiverBuilder
-
-  public final static String SAMPLER_CONF_KEY = "sampler";
-  private final static String DEFAULT_PACKAGE = "org.apache.htrace.core";
-  private final static ClassLoader classLoader =
-      SamplerBuilder.class.getClassLoader();
-  private final HTraceConfiguration conf;
   private static final Log LOG = LogFactory.getLog(SamplerBuilder.class);
+
+  private final static String DEFAULT_PACKAGE = "org.apache.htrace.core";
+  private final HTraceConfiguration conf;
+  private String className;
+  private ClassLoader classLoader = SamplerBuilder.class.getClassLoader();
 
   public SamplerBuilder(HTraceConfiguration conf) {
     this.conf = conf;
+    reset();
+  }
+
+  public SamplerBuilder reset() {
+    this.className = null;
+    return this;
+  }
+
+  public SamplerBuilder className(String className) {
+    this.className = className;
+    return this;
+  }
+
+  public SamplerBuilder classLoader(ClassLoader classLoader) {
+    this.classLoader = classLoader;
+    return this;
+  }
+
+  private void throwError(String errorStr) {
+    LOG.error(errorStr);
+    throw new RuntimeException(errorStr);
+  }
+
+  private void throwError(String errorStr, Throwable e) {
+    LOG.error(errorStr, e);
+    throw new RuntimeException(errorStr, e);
   }
 
   public Sampler build() {
@@ -52,10 +74,10 @@ public class SamplerBuilder {
   }
 
   private Sampler newSampler() {
-    String str = conf.get(SAMPLER_CONF_KEY);
-    if (str == null || str.isEmpty()) {
-      return NeverSampler.INSTANCE;
+    if (className == null || className.isEmpty()) {
+      throwError("No sampler class specified.");
     }
+    String str = className;
     if (!str.contains(".")) {
       str = DEFAULT_PACKAGE + "." + str;
     }
@@ -63,29 +85,26 @@ public class SamplerBuilder {
     try {
       cls = classLoader.loadClass(str);
     } catch (ClassNotFoundException e) {
-      LOG.error("SamplerBuilder cannot find sampler class " + str +
-          ": falling back on NeverSampler.");
-      return NeverSampler.INSTANCE;
+      throwError("SamplerBuilder cannot find Sampler class " + str);
     }
     Constructor<Sampler> ctor = null;
     try {
       ctor = cls.getConstructor(HTraceConfiguration.class);
     } catch (NoSuchMethodException e) {
-      LOG.error("SamplerBuilder cannot find a constructor for class " + str +
-          "which takes an HTraceConfiguration.  Falling back on " +
-          "NeverSampler.");
-      return NeverSampler.INSTANCE;
+      throwError("SamplerBuilder cannot find a constructor for class " +
+          str + "which takes an HTraceConfiguration.");
     }
+    Sampler sampler = null;
     try {
-      return ctor.newInstance(conf);
+      LOG.debug("Creating new instance of " + str + "...");
+      sampler = ctor.newInstance(conf);
     } catch (ReflectiveOperationException e) {
-      LOG.error("SamplerBuilder reflection error when constructing " + str +
-          ".  Falling back on NeverSampler.", e);
-      return NeverSampler.INSTANCE;
-    } catch (Throwable e) {
-      LOG.error("SamplerBuilder constructor error when constructing " + str +
-          ".  Falling back on NeverSampler.", e);
-      return NeverSampler.INSTANCE;
+      throwError("SamplerBuilder reflection error when constructing " +
+          str + ".", e);
+    } catch (Throwable t) {
+      throwError("SamplerBuilder newInstance error when constructing " +
+          str + ".", t);
     }
+    return sampler;
   }
 }
