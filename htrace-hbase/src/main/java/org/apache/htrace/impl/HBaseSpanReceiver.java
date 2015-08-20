@@ -122,7 +122,7 @@ public class HBaseSpanReceiver extends SpanReceiver {
   private ExecutorService service;
   private final HTraceConfiguration conf;
   private final Configuration hconf;
-  private final byte[] table;
+  private final TableName table;
   private final byte[] cf;
   private final byte[] icf;
   private final int maxSpanBatchSize;
@@ -131,7 +131,7 @@ public class HBaseSpanReceiver extends SpanReceiver {
     this.queue = new ArrayBlockingQueue<Span>(1000);
     this.conf = conf;
     this.hconf = HBaseConfiguration.create();
-    this.table = Bytes.toBytes(conf.get(TABLE_KEY, DEFAULT_TABLE));
+    this.table = TableName.valueOf(Bytes.toBytes(conf.get(TABLE_KEY, DEFAULT_TABLE)));
     this.cf = Bytes.toBytes(conf.get(COLUMNFAMILY_KEY, DEFAULT_COLUMNFAMILY));
     this.icf = Bytes.toBytes(conf.get(INDEXFAMILY_KEY, DEFAULT_INDEXFAMILY));
     this.maxSpanBatchSize = conf.getInt(MAX_SPAN_BATCH_SIZE_KEY,
@@ -157,7 +157,6 @@ public class HBaseSpanReceiver extends SpanReceiver {
 
   private class WriteSpanRunnable implements Runnable {
     private Connection hconnection;
-    private Table htable;
 
     public WriteSpanRunnable() {
     }
@@ -171,38 +170,31 @@ public class HBaseSpanReceiver extends SpanReceiver {
       SpanProtos.TimelineAnnotation.Builder tlbuilder =
           SpanProtos.TimelineAnnotation.newBuilder();
       List<Span> dequeuedSpans = new ArrayList<Span>(maxSpanBatchSize);
+      List<Put> puts = new ArrayList<Put>(maxSpanBatchSize);
       long errorCount = 0;
 
       while (running.get() || queue.size() > 0) {
-        Span firstSpan = null;
-        try {
-          // Block for up to a second. to try and get a span.
-          // We only block for a little bit in order to notice
-          // if the running value has changed
-          firstSpan = queue.poll(1, TimeUnit.SECONDS);
+        if (puts.size() < maxSpanBatchSize) {
+          Span firstSpan = null;
+          try {
+            // Block for up to a second. to try and get a span.
+            // We only block for a little bit in order to notice
+            // if the running value has changed
+            firstSpan = queue.poll(1, TimeUnit.SECONDS);
 
-          // If the poll was successful then it's possible that there
-          // will be other spans to get. Try and get them.
-          if (firstSpan != null) {
-            // Add the first one that we got
-            dequeuedSpans.add(firstSpan);
-            // Try and get up to 100 queues
-            queue.drainTo(dequeuedSpans, maxSpanBatchSize - 1);
+            // If the poll was successful then it's possible that there
+            // will be other spans to get. Try and get them.
+            if (firstSpan != null) {
+              // Add the first one that we got
+              dequeuedSpans.add(firstSpan);
+              // Try and get up to 100 queues
+              queue.drainTo(dequeuedSpans, maxSpanBatchSize - puts.size() - 1);
+            }
+          } catch (InterruptedException ie) {
+            // Ignored.
           }
-        } catch (InterruptedException ie) {
-          // Ignored.
         }
         startClient();
-        if (dequeuedSpans.isEmpty()) {
-          try {
-            this.htable.flushCommits();
-          } catch (IOException e) {
-            LOG.error("failed to flush writes to HBase.");
-            closeClient();
-          }
-          continue;
-        }
-
         try {
           for (Span span : dequeuedSpans) {
             sbuilder.clear()
@@ -241,22 +233,22 @@ public class HBaseSpanReceiver extends SpanReceiver {
                       INDEX_SPAN_QUAL,
                       sbuilder.build().toByteArray());
             }
-            this.htable.put(put);
+            puts.add(put);
           }
-          // clear the list for the next time through.
           dequeuedSpans.clear();
+
+          Table htable = hconnection.getTable(table);
+          htable.put(puts);
+          htable.close();
+          puts.clear();
+
           // reset the error counter.
           errorCount = 0;
         } catch (Exception e) {
           errorCount += 1;
           // If there have been ten errors in a row start dropping things.
-          if (errorCount < MAX_ERRORS) {
-            try {
-              queue.addAll(dequeuedSpans);
-            } catch (IllegalStateException ex) {
-              LOG.error("Drop " + dequeuedSpans.size() +
-                        " span(s) because writing to HBase failed.");
-            }
+          if (errorCount > MAX_ERRORS) {
+            puts.clear();
           }
           closeClient();
           try {
@@ -277,10 +269,6 @@ public class HBaseSpanReceiver extends SpanReceiver {
     private void closeClient() {
       // close out the transport.
       try {
-        if (this.htable != null) {
-          this.htable.close();
-          this.htable = null;
-        }
         if (this.hconnection != null) {
           this.hconnection.close();
           this.hconnection = null;
@@ -294,10 +282,9 @@ public class HBaseSpanReceiver extends SpanReceiver {
      * Re-connect to HBase
      */
     private void startClient() {
-      if (this.htable == null) {
+      if (this.hconnection == null) {
         try {
           hconnection = ConnectionFactory.createConnection(hconf);
-          htable = hconnection.getTable(TableName.valueOf(table));
         } catch (IOException e) {
           LOG.warn("Failed to create HBase connection. " + e.getMessage());
         }
