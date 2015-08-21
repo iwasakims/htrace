@@ -21,21 +21,20 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * A {@link SpanReceiver} builder. It reads a {@link SpanReceiver} class name from the provided
- * configuration using the {@link #SPAN_RECEIVER_CONF_KEY} key. Unqualified class names
- * are interpreted as members of the {@code org.apache.htrace.impl} package. The {@link #build()}
- * method constructs an instance of that class, initialized with the same configuration.
+ * A {@link SpanReceiver} builder.
+ *
+ * Unqualified class names are interpreted as members of the {@code
+ * org.apache.htrace.core} package. The {@link #build()} method constructs an
+ * instance of that class, initialized with the provided configuration.
  */
 public class SpanReceiverBuilder {
   private static final Log LOG = LogFactory.getLog(SpanReceiverBuilder.class);
 
-  public final static String SPAN_RECEIVER_CONF_KEY = "span.receiver";
   private final static String DEFAULT_PACKAGE = "org.apache.htrace.core";
-  private final static ClassLoader classLoader =
-      SpanReceiverBuilder.class.getClassLoader();
   private final HTraceConfiguration conf;
   private boolean logErrors;
-  private String spanReceiverClass;
+  private String className;
+  private ClassLoader classLoader = SpanReceiverBuilder.class.getClassLoader();
 
   public SpanReceiverBuilder(HTraceConfiguration conf) {
     this.conf = conf;
@@ -43,22 +42,18 @@ public class SpanReceiverBuilder {
   }
 
   /**
-   * Set this builder back to defaults. Any previous calls to {@link #spanReceiverClass(String)}
-   * are overridden by the value provided by configuration.
-   * @return This instance
+   * Set this builder back to defaults.
+   *
+   * @return this instance.
    */
   public SpanReceiverBuilder reset() {
     this.logErrors = true;
-    this.spanReceiverClass = this.conf.get(SPAN_RECEIVER_CONF_KEY);
+    this.className = null;
     return this;
   }
 
-  /**
-   * Override the {@code SpanReceiver} class name provided in configuration with a new value.
-   * @return This instance
-   */
-  public SpanReceiverBuilder spanReceiverClass(final String spanReceiverClass) {
-    this.spanReceiverClass = spanReceiverClass;
+  public SpanReceiverBuilder className(final String className) {
+    this.className = className;
     return this;
   }
 
@@ -71,37 +66,39 @@ public class SpanReceiverBuilder {
     return this;
   }
 
-  private void logError(String errorStr) {
-    if (!logErrors) {
-      return;
-    }
-    LOG.error(errorStr);
+  public SpanReceiverBuilder classLoader(ClassLoader classLoader) {
+    this.classLoader = classLoader;
+    return this;
   }
 
-  private void logError(String errorStr, Throwable e) {
-    if (!logErrors) {
-      return;
+  private void throwError(String errorStr) {
+    if (logErrors) {
+      LOG.error(errorStr);
     }
-    LOG.error(errorStr, e);
+    throw new RuntimeException(errorStr);
+  }
+
+  private void throwError(String errorStr, Throwable e) {
+    if (logErrors) {
+      LOG.error(errorStr, e);
+    }
+    throw new RuntimeException(errorStr, e);
   }
 
   public SpanReceiver build() {
     SpanReceiver spanReceiver = newSpanReceiver();
     if (LOG.isTraceEnabled()) {
       LOG.trace("Created new span receiver of type " +
-             ((spanReceiver == null) ? "(none)" :
-               spanReceiver.getClass().getName()));
+                spanReceiver.getClass().getName());
     }
     return spanReceiver;
   }
 
   private SpanReceiver newSpanReceiver() {
-    if ((this.spanReceiverClass == null) ||
-        this.spanReceiverClass.isEmpty()) {
-      LOG.debug("No span receiver class specified.");
-      return null;
+    if ((className == null) || className.isEmpty()) {
+      throwError("No span receiver class specified.");
     }
-    String str = spanReceiverClass;
+    String str = className;
     if (!str.contains(".")) {
       str = DEFAULT_PACKAGE + "." + str;
     }
@@ -109,30 +106,26 @@ public class SpanReceiverBuilder {
     try {
       cls = classLoader.loadClass(str);
     } catch (ClassNotFoundException e) {
-      logError("SpanReceiverBuilder cannot find SpanReceiver class " + str +
-          ": disabling span receiver.");
-      return null;
+      throwError("SpanReceiverBuilder cannot find SpanReceiver class " + str);
     }
     Constructor<SpanReceiver> ctor = null;
     try {
       ctor = cls.getConstructor(HTraceConfiguration.class);
     } catch (NoSuchMethodException e) {
-      logError("SpanReceiverBuilder cannot find a constructor for class " +
-          str + "which takes an HTraceConfiguration.  Disabling span " +
-          "receiver.");
-      return null;
+      throwError("SpanReceiverBuilder cannot find a constructor for class " +
+          str + "which takes an HTraceConfiguration.");
     }
+    SpanReceiver receiver = null;
     try {
       LOG.debug("Creating new instance of " + str + "...");
-      return ctor.newInstance(conf);
+      receiver = ctor.newInstance(conf);
     } catch (ReflectiveOperationException e) {
-      logError("SpanReceiverBuilder reflection error when constructing " + str +
-          ".  Disabling span receiver.", e);
-      return null;
-    } catch (Throwable e) {
-      logError("SpanReceiverBuilder constructor error when constructing " + str +
-          ".  Disabling span receiver.", e);
-      return null;
+      throwError("SpanReceiverBuilder reflection error when constructing " +
+          str + ".", e);
+    } catch (Throwable t) {
+      throwError("SpanReceiverBuilder newInstance error when constructing " +
+          str + ".", t);
     }
+    return receiver;
   }
-}
+ }

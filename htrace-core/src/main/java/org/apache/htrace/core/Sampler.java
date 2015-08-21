@@ -31,9 +31,9 @@ package org.apache.htrace.core;
  * </pre>
  * This would trace 50% of all gets, 75% of all puts and would not trace any other requests.
  */
-public interface Sampler {
+public abstract class Sampler {
   public static final Sampler ALWAYS = AlwaysSampler.INSTANCE;
   public static final Sampler NEVER = NeverSampler.INSTANCE;
 
-  public boolean next();
+  public abstract boolean next();
 }
