@@ -18,16 +18,14 @@ package org.apache.htrace;
 
 import java.io.Closeable;
 
+/**
+ * Stab for unit tests to run MiniHBaseCluster and hbase-client
+ * of hbase-1 which depends on htrace-3.1.0-incubating.
+ */
 public class TraceScope implements Closeable {
 
-  /**
-   * the span for this scope
-   */
   private final Span span;
 
-  /**
-   * the span that was "current" before this scope was entered
-   */
   private final Span savedSpan;
 
   private boolean detached = false;
@@ -41,22 +39,11 @@ public class TraceScope implements Closeable {
     return span;
   }
 
-  /**
-   * Remove this span as the current thread, but don't stop it yet or
-   * send it for collection. This is useful if the span object is then
-   * passed to another thread for use with Trace.continueTrace().
-   *
-   * @return the same Span object
-   */
   public Span detach() {
     detached = true;
     return span;
   }
 
-  /**
-   * Return true when {@link #detach()} has been called. Helpful when debugging
-   * multiple threads working on a single span.
-   */
   public boolean isDetached() {
     return detached;
   }

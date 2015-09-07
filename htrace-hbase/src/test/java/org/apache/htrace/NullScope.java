@@ -17,7 +17,8 @@
 package org.apache.htrace;
 
 /**
- * Singleton instance representing an empty {@link TraceScope}.
+ * Stab for unit tests to run MiniHBaseCluster and hbase-client
+ * of hbase-1 which depends on htrace-3.1.0-incubating.
  */
 public final class NullScope extends TraceScope {
 

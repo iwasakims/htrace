@@ -16,6 +16,10 @@
  */
 package org.apache.htrace;
 
+/**
+ * Stab for unit tests to run MiniHBaseCluster and hbase-client
+ * of hbase-1 which depends on htrace-3.1.0-incubating.
+ */
 public interface Sampler<T> {
   public boolean next(T info);
 }

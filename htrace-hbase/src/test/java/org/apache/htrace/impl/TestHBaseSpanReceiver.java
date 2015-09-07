@@ -40,6 +40,7 @@ import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.htrace.core.HTraceConfiguration;
+import org.apache.htrace.core.Sampler;
 import org.apache.htrace.core.Span;
 import org.apache.htrace.core.SpanId;
 import org.apache.htrace.core.TimelineAnnotation;
@@ -81,8 +82,7 @@ public class TestHBaseSpanReceiver {
     return htable;
   }
 
-  // Reenable after fix circular dependency
-  @Ignore @Test
+  @Test
   public void testHBaseSpanReceiver() {
     Table htable = createTable(UTIL);
     Configuration conf = UTIL.getConfiguration();
@@ -90,6 +90,8 @@ public class TestHBaseSpanReceiver {
         name("testHBaseSpanReceiver").
         tracerPool(new TracerPool("testHBaseSpanReceiver")).
         conf(HTraceConfiguration.fromKeyValuePairs(
+          Tracer.SPAN_RECEIVER_CLASSES_KEY,
+              HBaseSpanReceiver.class.getName(),
           HBaseSpanReceiver.COLLECTOR_QUORUM_KEY,
               conf.get(HConstants.ZOOKEEPER_QUORUM),
           HBaseSpanReceiver.ZOOKEEPER_CLIENT_PORT_KEY,
@@ -97,6 +99,7 @@ public class TestHBaseSpanReceiver {
           HBaseSpanReceiver.ZOOKEEPER_ZNODE_PARENT_KEY,
               conf.get(HConstants.ZOOKEEPER_ZNODE_PARENT)
         )).build();
+    tracer.addSampler(Sampler.ALWAYS);
     TraceCreator tc = new TraceCreator(tracer);
     tc.createThreadedTrace();
     tc.createSimpleTrace();

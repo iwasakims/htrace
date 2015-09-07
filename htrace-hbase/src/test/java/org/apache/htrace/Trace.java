@@ -16,6 +16,10 @@
  */
 package org.apache.htrace;
 
+/**
+ * Stab for unit tests to run MiniHBaseCluster and hbase-client
+ * of hbase-1 which depends on htrace-3.1.0-incubating.
+ */
 public class Trace {
   public static TraceScope startSpan(String description) {
     return NullScope.INSTANCE;
