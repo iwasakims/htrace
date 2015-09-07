@@ -192,6 +192,7 @@ public class HBaseSpanReceiver extends SpanReceiver {
           // Ignored.
         }
         startClient();
+        /*
         if (dequeuedSpans.isEmpty()) {
           try {
             this.htable.flushCommits();
@@ -201,6 +202,7 @@ public class HBaseSpanReceiver extends SpanReceiver {
           }
           continue;
         }
+        */
 
         try {
           for (Span span : dequeuedSpans) {
