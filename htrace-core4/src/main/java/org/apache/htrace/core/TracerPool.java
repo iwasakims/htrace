@@ -228,7 +228,9 @@ public class TracerPool {
       HTraceConfiguration conf, ClassLoader classLoader) {
     SpanReceiver[] receivers = curReceivers;
     for (SpanReceiver receiver : receivers) {
-      if (receiver.getClass().getName().equals(className)) {
+      String receiverClass = className.contains(".") ? 
+          receiver.getClass().getName() : receiver.getClass().getSimpleName();
+      if (receiverClass.equals(className)) {
         LOG.trace(toString() + ": returning a reference to receiver " +
                   receiver.toString());
         return receiver;
