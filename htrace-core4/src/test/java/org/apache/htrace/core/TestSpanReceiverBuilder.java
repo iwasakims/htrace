@@ -55,6 +55,9 @@ public class TestSpanReceiverBuilder {
     receivers = createSpanReceivers("POJOSpanReceiver");
     Assert.assertTrue(receivers.get(0).getClass().getName().
         equals("org.apache.htrace.core.POJOSpanReceiver"));
+    receivers = createSpanReceivers("ImplSpanReceiver");
+    Assert.assertTrue(receivers.get(0).getClass().getName().
+        equals("org.apache.htrace.impl.ImplSpanReceiver"));
     receivers = createSpanReceivers(
                "org.apache.htrace.core.StandardOutSpanReceiver");
     Assert.assertTrue(receivers.get(0).getClass().getName().

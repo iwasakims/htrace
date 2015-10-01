@@ -18,6 +18,7 @@ package org.apache.htrace.core;
 
 import java.io.Closeable;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
@@ -39,7 +40,8 @@ public abstract class SpanReceiver implements Closeable {
   public static class Builder {
     private static final Log LOG = LogFactory.getLog(Builder.class);
 
-    private final static String DEFAULT_PACKAGE = "org.apache.htrace.core";
+    private final static String[] DEFAULT_PACKAGES =
+        {"org.apache.htrace.impl", "org.apache.htrace.core"};
     private final HTraceConfiguration conf;
     private boolean logErrors;
     private String className;
@@ -107,33 +109,43 @@ public abstract class SpanReceiver implements Closeable {
       if ((className == null) || className.isEmpty()) {
         throwError("No span receiver class specified.");
       }
-      String str = className;
-      if (!str.contains(".")) {
-        str = DEFAULT_PACKAGE + "." + str;
+      ArrayList<String> classNames = new ArrayList<String>();
+      if (!className.contains(".")) {
+        for (String pkg : DEFAULT_PACKAGES) {
+          classNames.add(pkg + "." + className);
+        }
+      } else {
+        classNames.add(className);
       }
       Class cls = null;
-      try {
-        cls = classLoader.loadClass(str);
-      } catch (ClassNotFoundException e) {
-        throwError("Cannot find SpanReceiver class " + str);
+      for (String name : classNames) {
+        try {
+          cls = classLoader.loadClass(name);
+          break;
+        } catch (ClassNotFoundException e) {
+          LOG.debug("Cannot find SpanReceiver class " + name);
+        }
+      }
+      if (cls == null) {
+        throwError("Cannot find SpanReceiver class " + className);
       }
       Constructor<SpanReceiver> ctor = null;
       try {
         ctor = cls.getConstructor(HTraceConfiguration.class);
       } catch (NoSuchMethodException e) {
         throwError("Cannot find a constructor for class " +
-            str + "which takes an HTraceConfiguration.");
+            cls.getName() + "which takes an HTraceConfiguration.");
       }
       SpanReceiver receiver = null;
       try {
-        LOG.debug("Creating new instance of " + str + "...");
+        LOG.debug("Creating new instance of " + cls.getName() + "...");
         receiver = ctor.newInstance(conf);
       } catch (ReflectiveOperationException e) {
         throwError("Reflection error when constructing " +
-            str + ".", e);
+            cls.getName() + ".", e);
       } catch (Throwable t) {
         throwError("NewInstance error when constructing " +
-            str + ".", t);
+            cls.getName() + ".", t);
       }
       return receiver;
     }
