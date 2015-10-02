@@ -226,11 +226,11 @@ public class TracerPool {
    */
   public synchronized SpanReceiver loadReceiverType(String className,
       HTraceConfiguration conf, ClassLoader classLoader) {
+    String receiverClass = className.contains(".") ? 
+        className : SpanReceiver.Builder.DEFAULT_PACKAGE + "." + className;
     SpanReceiver[] receivers = curReceivers;
     for (SpanReceiver receiver : receivers) {
-      String receiverClass = className.contains(".") ? 
-          receiver.getClass().getName() : receiver.getClass().getSimpleName();
-      if (receiverClass.equals(className)) {
+      if (receiver.getClass().getName().equals(receiverClass)) {
         LOG.trace(toString() + ": returning a reference to receiver " +
                   receiver.toString());
         return receiver;
